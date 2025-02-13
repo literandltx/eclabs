@@ -96,11 +96,89 @@ impl Curve {
     }
 
     fn add(&self, point1: &ProjectivePoint, point2: &ProjectivePoint) -> ProjectivePoint {
-        ProjectivePoint::neutral()
+        if point1.x == BigInt::zero() && point1.y == BigInt::one() && point1.z == BigInt::zero() {
+            return ProjectivePoint::neutral();
+        }
+
+        if point2.x == BigInt::zero() && point2.y == BigInt::one() && point2.z == BigInt::zero() {
+            return ProjectivePoint::neutral();
+        }
+
+        // U1 := Y2*Z1
+        let u1: BigInt = point2.y.clone() * point1.z.clone();
+
+        // U2 := Y1*Z2
+        let u2: BigInt = point1.y.clone() * point2.z.clone();
+
+        // V1 := X2*Z1
+        let v1: BigInt = point2.x.clone() * point1.z.clone();
+
+        // V2 := X1*Z2
+        let v2: BigInt = point1.x.clone() * point2.z.clone();
+
+        if v1 == v2 {
+            return if u1 != u2 {
+                ProjectivePoint::neutral()
+            } else {
+                self.double(&point1)
+            };
+        }
+
+        // U := U1 - U2
+        let u: BigInt = u1.clone() - u2.clone();
+
+        // V := V1 - V2
+        let v: BigInt = v1.clone() - v2.clone();
+
+        // W := Z1*Z2
+        let w: BigInt = point1.z.clone() * point2.z.clone();
+
+        // A := U^2*W - V^3 - 2*V^2*V2
+        let a: BigInt = u.clone() * u.clone() * w.clone()
+            - v.clone() * v.clone() * v.clone()
+            - 2 * v.clone() * v.clone() * v2.clone();
+
+        // X3 := V*A
+        let x: BigInt = v.clone() * a.clone();
+
+        // Y3 := U*(V^2*V2 - A) - V^3*U2
+        let y: BigInt = u.clone() * (v.clone() * v.clone() * v2.clone() - a.clone())
+            - v.clone() * v.clone() * v.clone() * u2.clone();
+
+        // Z3 := V^3*W
+        let z: BigInt = v.clone() * v.clone() * v.clone() * w.clone();
+
+        ProjectivePoint::new(
+            x % 29,
+            y % 29,
+            z % 29
+        )
     }
 
-    fn double(&self) -> ProjectivePoint {
-        ProjectivePoint::neutral()
+    fn double(&self, point: &ProjectivePoint) -> ProjectivePoint {
+        if point.x == BigInt::zero() && point.y == BigInt::one() && point.z == BigInt::zero() {
+            return ProjectivePoint::neutral();
+        }
+
+        if point.y == BigInt::zero() {
+            return ProjectivePoint::neutral();
+        }
+
+        let w: BigInt = &self.a * point.z.clone();
+        let s: BigInt = point.y.clone() * point.z.clone();
+        let b: BigInt = point.x.clone() * point.y.clone() * s.clone();
+        let h: BigInt = w.clone() * w.clone() - 8 * b.clone();
+
+        let x: BigInt = 2 * h.clone() * s.clone();
+        let y: BigInt = w.clone() * (4 * b.clone() - h.clone())
+            - 8 * point.y.clone() * point.y.clone() * s.clone() * s.clone();
+        let z: BigInt = 8 * s.clone() * s.clone() * s.clone();
+
+        ProjectivePoint::new(
+            x % 29,
+            y % 29,
+            z % 29
+        )
     }
 
     fn scalar_mul(&self, scalar: &BigInt) -> ProjectivePoint {
@@ -177,9 +255,40 @@ mod tests {
         assert!(&affine_point.is_none());
     }
 
+    #[test]
+    fn test_double1() {
+        let p: &BigInt = &BigInt::from_str_radix("29", 10).unwrap();
+        let a: &BigInt = &BigInt::from_str_radix("1", 10).unwrap();
+        let b: &BigInt = &BigInt::from_str_radix("1", 10).unwrap();
+
+        let curve: Curve = Curve::new(p, a, b).unwrap();
+        let x: BigInt = BigInt::from_str_radix("18", 10).unwrap();
+        let y: BigInt = BigInt::from_str_radix("14", 10).unwrap();
+        let z: BigInt = BigInt::from_str_radix("1", 10).unwrap();
+
+        let x2: BigInt = BigInt::from_str_radix("0", 10).unwrap();
+        let y2: BigInt = BigInt::from_str_radix("28", 10).unwrap();
+        let z2: BigInt = BigInt::from_str_radix("1", 10).unwrap();
+
+
+        let projective_point: ProjectivePoint =
+            ProjectivePoint::new(x.clone(), y.clone(), z.clone());
+
+        let projective_point2: ProjectivePoint =
+                ProjectivePoint::new(x2.clone(), y2.clone(), z2.clone());
+
+        println!("{:?}", curve.double(&projective_point));
+        println!("{:?}", curve.double(&projective_point).to_affine(&curve).unwrap());
+
+        println!();
+
+        println!("{:?}", curve.add(&projective_point, &projective_point2));
+        println!("{:?}", curve.add(&projective_point, &projective_point2).to_affine(&curve).unwrap());
+    }
+
     // P-256
     #[test]
-    fn test_add_affine_point() {
+    fn test_add_affine_point_neutral() {
         let p: &BigInt = &BigInt::from_str_radix(
             "ffffffff00000001000000000000000000000000ffffffffffffffffffffffff",
             16,
