@@ -1,8 +1,8 @@
 mod helpers;
 
+use crate::helpers::module;
 use num_bigint::BigInt;
 use num_traits::{Num, One, Pow, Zero};
-use crate::helpers::module;
 
 #[derive(Clone, Debug)]
 struct AffinePoint {
@@ -136,13 +136,12 @@ impl Curve {
         let w: BigInt = (&a.z * &b.z) % &self.p;
 
         // A := U^2*W - V^3 - 2*V^2*V2
-        let _a: BigInt = (&u * &u * &w - &v * &v * &v - BigInt::from(2) * &v * &v * &v2) % &self.p;
+        let _a: BigInt = (&u * &u * &w - &v * &v * &v - 2 * &v * &v * &v2) % &self.p;
 
         // X3 := V*A
         let x: BigInt = (&v * &_a) % &self.p;
 
         // Y3 := U*(V^2*V2 - A) - V^3*U2
-        let y: BigInt = (&u * (&v * &v * &v2 - &_a) - &v * &v * &v * &u2) % &self.p;
         let y: BigInt = (&u * (&v * &v * &v2 - &_a) - &v * &v * &v * &u2) % &self.p;
 
         // Z3 := V^3*W
@@ -151,7 +150,7 @@ impl Curve {
         ProjectivePoint::new(
             module(&x, &self.p),
             module(&y, &self.p),
-            module(&z, &self.p)
+            module(&z, &self.p),
         )
     }
 
@@ -188,7 +187,7 @@ impl Curve {
         ProjectivePoint::new(
             module(&x, &self.p),
             module(&y, &self.p),
-            module(&z, &self.p)
+            module(&z, &self.p),
         )
     }
 
@@ -313,19 +312,13 @@ mod tests {
             ProjectivePoint::new(x.clone(), y.clone(), z.clone());
 
         let double_projective_point: ProjectivePoint = curve.double(&projective_point);
-
         let double_affine_point = double_projective_point.to_affine(&curve).unwrap();
-
-        // println!("{:?}", double_projective_point);
-        println!("{:?}", double_affine_point);
 
         let result: ProjectivePoint = double_affine_point.to_projective();
 
-        println!("{:?}", result);
-
-        assert_eq!(result.z % p, double_z % p);
-        assert_eq!(result.x % p, double_x % p);
-        assert_eq!(result.y % p, double_y % p);
+        assert_eq!(result.z, double_z);
+        assert_eq!(result.x, double_x);
+        assert_eq!(result.y, double_y);
     }
 
     // P-256
@@ -380,25 +373,25 @@ mod tests {
         let curve: Curve = Curve::new(p, a, b).unwrap();
 
         let x1: BigInt = BigInt::from_str_radix(
-            "96f43acb7e4ad862d547681483abfe1c6a21eace101ceca1e0dfa97beb8d99ec",
-            16,
+            "68278443758753309620248260190700068206105694628838492838163118930873086220780",
+            10,
         )
         .unwrap();
         let y1: BigInt = BigInt::from_str_radix(
-            "69e14d9fe6ce5b8cb04b2fb0ffa525526c2b7114d891b4aa2f53dfe8de3d6dad",
-            16,
+            "47890925436225047886667813019233725009834729938480004609112948108082127138221",
+            10,
         )
         .unwrap();
-        let z1: BigInt = BigInt::from_str_radix("1", 16).unwrap();
+        let z1: BigInt = BigInt::from_str_radix("1", 10).unwrap();
 
         let x2: BigInt = BigInt::from_str_radix(
-            "4faeebce6274ce7715c658a430621627fef6ef248b1655121a28550ab0099379",
-            16,
+            "36041773901858648762789006722537555576806908678254251775422211831047989597049",
+            10,
         )
         .unwrap();
         let y2: BigInt = BigInt::from_str_radix(
-            "e6c1da595c7e174ee06f298d50261ed7256fdb79e42ebf519137309d042ee0ae",
-            16,
+            "104374463647532952902541679499731110179928673815908965998191930674877316391086",
+            10,
         )
         .unwrap();
         let z2: BigInt = BigInt::from_str_radix("1", 16).unwrap();
@@ -417,12 +410,15 @@ mod tests {
 
         let point1: ProjectivePoint = ProjectivePoint::new(x1.clone(), y1.clone(), z1.clone());
         let point2: ProjectivePoint = ProjectivePoint::new(x2.clone(), y2.clone(), z2.clone());
-        let sum_point: ProjectivePoint = ProjectivePoint::new(xs.clone(), ys.clone(), zs.clone());
 
-        let result: ProjectivePoint = curve.add(&point1, &point2);
+        let add_projective_point: ProjectivePoint = curve.add(&point1, &point2);
 
-        assert_eq!(&sum_point.x, &result.x);
-        assert_eq!(&sum_point.y, &result.y);
-        assert_eq!(&sum_point.y, &result.y);
+        let add_affine_point: AffinePoint = add_projective_point.to_affine(&curve).unwrap();
+
+        let resut: ProjectivePoint = add_affine_point.to_projective();
+
+        assert_eq!(resut.x, xs);
+        assert_eq!(resut.y, ys);
+        assert_eq!(resut.z, zs);
     }
 }
