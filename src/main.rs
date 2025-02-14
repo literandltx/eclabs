@@ -192,7 +192,18 @@ impl Curve {
     }
 
     fn scalar_mul(&self, scalar: &BigInt, point: &ProjectivePoint) -> ProjectivePoint {
-        ProjectivePoint::neutral()
+        let mut result: ProjectivePoint = ProjectivePoint::neutral();
+        let mut temp: ProjectivePoint = point.clone();
+
+        for i in scalar.to_str_radix(2).into_bytes().iter().rev() {
+            if *i - b'0' == 1 {
+                result = self.add(&result, &temp);
+            }
+
+            temp = self.double(&temp);
+        }
+
+        result
     }
 }
 
