@@ -31,7 +31,7 @@ impl AffinePoint {
         ProjectivePoint {
             x: self.x.clone(),
             y: self.y.clone(),
-            z: BigInt::zero(),
+            z: BigInt::one(),
         }
     }
 }
@@ -160,17 +160,28 @@ impl Curve {
             return ProjectivePoint::neutral();
         }
 
-        let w: BigInt = &self.a * point.z.clone();
-        let s: BigInt = point.y.clone() * point.z.clone();
-        let b: BigInt = point.x.clone() * point.y.clone() * s.clone();
-        let h: BigInt = w.clone() * w.clone() - 8 * b.clone();
+        // W := a*Z^2 + 3*X^2
+        let w: BigInt = (&self.a * &point.z * &point.z) % &self.p;
 
-        let x: BigInt = 2 * h.clone() * s.clone();
-        let y: BigInt = w.clone() * (4 * b.clone() - h.clone())
-            - 8 * point.y.clone() * point.y.clone() * s.clone() * s.clone();
-        let z: BigInt = 8 * s.clone() * s.clone() * s.clone();
+        // S := Y*Z
+        let s: BigInt = (&point.y * &point.z) % &self.p;
 
-        ProjectivePoint::new(x % 29, y % 29, z % 29)
+        // B := X*Y*S
+        let b: BigInt = (&point.x * &point.y * &s) % &self.p;
+
+        // H := W^2 - 8*B
+        let h: BigInt = (&w * &w - 8 * &b) % &self.p;
+
+        // X' := 2*H*S
+        let x: BigInt = (2 * &h * &s) % &self.p;
+
+        // Y' := W*(4*B - H) - 8*Y^2*S^2
+        let y: BigInt = (&w * (4 * &b - &h) - 8 * &point.y * &point.y * &s * &s) % &self.p;
+
+        // Z' := 8*S^3
+        let z: BigInt = (8 * &s * &s * &s) % &self.p;
+
+        ProjectivePoint::new(x, y, z)
     }
 
     fn scalar_mul(&self, scalar: &BigInt) -> ProjectivePoint {
@@ -293,28 +304,19 @@ mod tests {
         let projective_point: ProjectivePoint =
             ProjectivePoint::new(x.clone(), y.clone(), z.clone());
 
-        let double_projective_point: ProjectivePoint =
-            ProjectivePoint::new(double_x.clone(), double_y.clone(), double_z.clone());
+        let double_projective_point: ProjectivePoint = curve.double(&projective_point);
 
-        println!("{:?}", curve.double(&projective_point));
-        println!(
-            "{:?}",
-            curve.double(&projective_point).to_affine(&curve).unwrap()
-        );
+        let double_affine_point = double_projective_point.to_affine(&curve).unwrap();
 
-        println!();
+        println!("{:?}", double_affine_point);
 
-        println!(
-            "{:?}",
-            curve.add(&projective_point, &double_projective_point)
-        );
-        println!(
-            "{:?}",
-            curve
-                .add(&projective_point, &double_projective_point)
-                .to_affine(&curve)
-                .unwrap()
-        );
+        let result: ProjectivePoint = double_affine_point.to_projective();
+
+        println!("{:?}", result);
+
+        assert_eq!(result.z, double_z);
+        assert_eq!(result.x, double_x);
+        assert_eq!(result.y, double_y);
     }
 
     // P-256
