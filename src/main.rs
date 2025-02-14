@@ -249,17 +249,45 @@ mod tests {
 
     #[test]
     fn test_double1() {
-        let p: &BigInt = &BigInt::from_str_radix("ffffffff00000001000000000000000000000000ffffffffffffffffffffffff", 16).unwrap();
-        let a: &BigInt = &BigInt::from_str_radix("ffffffff00000001000000000000000000000000fffffffffffffffffffffffc", 16).unwrap();
-        let b: &BigInt = &BigInt::from_str_radix("5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b", 16).unwrap();
+        let p: &BigInt = &BigInt::from_str_radix(
+            "ffffffff00000001000000000000000000000000ffffffffffffffffffffffff",
+            16,
+        )
+        .unwrap();
+        let a: &BigInt = &BigInt::from_str_radix(
+            "ffffffff00000001000000000000000000000000fffffffffffffffffffffffc",
+            16,
+        )
+        .unwrap();
+        let b: &BigInt = &BigInt::from_str_radix(
+            "5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b",
+            16,
+        )
+        .unwrap();
 
         let curve: Curve = Curve::new(p, a, b).unwrap();
-        let x: BigInt = BigInt::from_str_radix("96f43acb7e4ad862d547681483abfe1c6a21eace101ceca1e0dfa97beb8d99ec", 16).unwrap();
-        let y: BigInt = BigInt::from_str_radix("69e14d9fe6ce5b8cb04b2fb0ffa525526c2b7114d891b4aa2f53dfe8de3d6dad", 16).unwrap();
+        let x: BigInt = BigInt::from_str_radix(
+            "96f43acb7e4ad862d547681483abfe1c6a21eace101ceca1e0dfa97beb8d99ec",
+            16,
+        )
+        .unwrap();
+        let y: BigInt = BigInt::from_str_radix(
+            "69e14d9fe6ce5b8cb04b2fb0ffa525526c2b7114d891b4aa2f53dfe8de3d6dad",
+            16,
+        )
+        .unwrap();
         let z: BigInt = BigInt::from_str_radix("1", 16).unwrap();
 
-        let x2: BigInt = BigInt::from_str_radix("23256713097452873534819684224181198488753197392778987539588939509885686328462", 10).unwrap();
-        let y2: BigInt = BigInt::from_str_radix("23560293084035690959730279798706588908809082944968261336868665854561491207411", 10).unwrap();
+        let x2: BigInt = BigInt::from_str_radix(
+            "23256713097452873534819684224181198488753197392778987539588939509885686328462",
+            10,
+        )
+        .unwrap();
+        let y2: BigInt = BigInt::from_str_radix(
+            "23560293084035690959730279798706588908809082944968261336868665854561491207411",
+            10,
+        )
+        .unwrap();
         let z2: BigInt = BigInt::from_str_radix("1", 10).unwrap();
 
         let projective_point: ProjectivePoint =
@@ -317,53 +345,70 @@ mod tests {
         let result: ProjectivePoint = curve.add(&point1, &identity);
     }
 
-    // #[test]
-    // fn test_add_two_affine_points() {
-    //     let p: &BigInt = &BigInt::from_str_radix(
-    //         "ffffffff00000001000000000000000000000000ffffffffffffffffffffffff",
-    //         16,
-    //     )
-    //         .unwrap();
-    //     let a: &BigInt = &BigInt::from_str_radix(
-    //         "ffffffff00000001000000000000000000000000fffffffffffffffffffffffc",
-    //         16,
-    //     )
-    //         .unwrap();
-    //     let b: &BigInt = &BigInt::from_str_radix(
-    //         "5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b",
-    //         16,
-    //     )
-    //         .unwrap();
-    //
-    //     let curve: Curve = Curve::new(p, a, b).unwrap();
-    //
-    //     let x1: BigInt = BigInt::from_str_radix("96f43acb7e4ad862d547681483abfe1c6a21eace101ceca1e0dfa97beb8d99ec", 16).unwrap();
-    //     let y1: BigInt = BigInt::from_str_radix("69e14d9fe6ce5b8cb04b2fb0ffa525526c2b7114d891b4aa2f53dfe8de3d6dad", 16).unwrap();
-    //     let z1: BigInt = BigInt::from_str_radix("1", 16).unwrap();
-    //
-    //     let x2: BigInt = BigInt::from_str_radix("4faeebce6274ce7715c658a430621627fef6ef248b1655121a28550ab0099379", 16).unwrap();
-    //     let y2: BigInt = BigInt::from_str_radix("e6c1da595c7e174ee06f298d50261ed7256fdb79e42ebf519137309d042ee0ae", 16).unwrap();
-    //     let z2: BigInt = BigInt::from_str_radix("1", 16).unwrap();
-    //
-    //     let xs: BigInt = BigInt::from_str_radix("60925061547489862940527908037003633368921254513905133864735524490867813970614", 10).unwrap();
-    //     let ys: BigInt = BigInt::from_str_radix("4224995115825146765508233942604852388022531386580408859355570965592456321292", 10).unwrap();
-    //     let zs: BigInt = BigInt::from_str_radix("1", 10).unwrap();
-    //
-    //     let point1: ProjectivePoint = ProjectivePoint::new(x1.clone(), y1.clone(), z1.clone());
-    //     let point2: ProjectivePoint = ProjectivePoint::new(x2.clone(), y2.clone(), z2.clone());
-    //     let sum_point: ProjectivePoint = ProjectivePoint::new(xs.clone(), ys.clone(), zs.clone());
-    //
-    //
-    //     let result: ProjectivePoint = curve.add(&point1, &point2);
-    //
-    //
-    //     println!("{:?}", curve.add(&projective_point, &projective_point2));
-    //     println!(
-    //         "{:?}",
-    //         curve
-    //             .add(&projective_point, &projective_point2)
-    //             .to_affine(&curve)
-    //             .unwrap()
-    //     );
-    // }
+    #[test]
+    fn test_add_two_affine_points() {
+        let p: &BigInt = &BigInt::from_str_radix(
+            "ffffffff00000001000000000000000000000000ffffffffffffffffffffffff",
+            16,
+        )
+        .unwrap();
+        let a: &BigInt = &BigInt::from_str_radix(
+            "ffffffff00000001000000000000000000000000fffffffffffffffffffffffc",
+            16,
+        )
+        .unwrap();
+        let b: &BigInt = &BigInt::from_str_radix(
+            "5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b",
+            16,
+        )
+        .unwrap();
+
+        let curve: Curve = Curve::new(p, a, b).unwrap();
+
+        let x1: BigInt = BigInt::from_str_radix(
+            "96f43acb7e4ad862d547681483abfe1c6a21eace101ceca1e0dfa97beb8d99ec",
+            16,
+        )
+        .unwrap();
+        let y1: BigInt = BigInt::from_str_radix(
+            "69e14d9fe6ce5b8cb04b2fb0ffa525526c2b7114d891b4aa2f53dfe8de3d6dad",
+            16,
+        )
+        .unwrap();
+        let z1: BigInt = BigInt::from_str_radix("1", 16).unwrap();
+
+        let x2: BigInt = BigInt::from_str_radix(
+            "4faeebce6274ce7715c658a430621627fef6ef248b1655121a28550ab0099379",
+            16,
+        )
+        .unwrap();
+        let y2: BigInt = BigInt::from_str_radix(
+            "e6c1da595c7e174ee06f298d50261ed7256fdb79e42ebf519137309d042ee0ae",
+            16,
+        )
+        .unwrap();
+        let z2: BigInt = BigInt::from_str_radix("1", 16).unwrap();
+
+        let xs: BigInt = BigInt::from_str_radix(
+            "60925061547489862940527908037003633368921254513905133864735524490867813970614",
+            10,
+        )
+        .unwrap();
+        let ys: BigInt = BigInt::from_str_radix(
+            "4224995115825146765508233942604852388022531386580408859355570965592456321292",
+            10,
+        )
+        .unwrap();
+        let zs: BigInt = BigInt::from_str_radix("1", 10).unwrap();
+
+        let point1: ProjectivePoint = ProjectivePoint::new(x1.clone(), y1.clone(), z1.clone());
+        let point2: ProjectivePoint = ProjectivePoint::new(x2.clone(), y2.clone(), z2.clone());
+        let sum_point: ProjectivePoint = ProjectivePoint::new(xs.clone(), ys.clone(), zs.clone());
+
+        let result: ProjectivePoint = curve.add(&point1, &point2);
+
+        assert_eq!(&sum_point.x, &result.x);
+        assert_eq!(&sum_point.y, &result.y);
+        assert_eq!(&sum_point.y, &result.y);
+    }
 }
