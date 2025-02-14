@@ -121,7 +121,6 @@ impl Curve {
             return if u1 != u2 {
                 ProjectivePoint::neutral()
             } else {
-                println!("called double");
                 self.double(&a)
             };
         }
@@ -359,8 +358,6 @@ mod tests {
 
         let point1: ProjectivePoint = ProjectivePoint::new(x1.clone(), y1.clone(), z1.clone());
         let identity: ProjectivePoint = ProjectivePoint::neutral();
-
-        let result: ProjectivePoint = curve.add(&point1, &identity);
 
         let add_projective_point: ProjectivePoint = curve.add(&point1, &identity);
         let add_affine_point: AffinePoint = add_projective_point.to_affine(&curve).unwrap();
