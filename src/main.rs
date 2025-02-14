@@ -278,23 +278,23 @@ mod tests {
         .unwrap();
         let z: BigInt = BigInt::from_str_radix("1", 16).unwrap();
 
-        let x2: BigInt = BigInt::from_str_radix(
+        let double_x: BigInt = BigInt::from_str_radix(
             "23256713097452873534819684224181198488753197392778987539588939509885686328462",
             10,
         )
         .unwrap();
-        let y2: BigInt = BigInt::from_str_radix(
+        let double_y: BigInt = BigInt::from_str_radix(
             "23560293084035690959730279798706588908809082944968261336868665854561491207411",
             10,
         )
         .unwrap();
-        let z2: BigInt = BigInt::from_str_radix("1", 10).unwrap();
+        let double_z: BigInt = BigInt::from_str_radix("1", 10).unwrap();
 
         let projective_point: ProjectivePoint =
             ProjectivePoint::new(x.clone(), y.clone(), z.clone());
 
-        let projective_point2: ProjectivePoint =
-            ProjectivePoint::new(x2.clone(), y2.clone(), z2.clone());
+        let double_projective_point: ProjectivePoint =
+            ProjectivePoint::new(double_x.clone(), double_y.clone(), double_z.clone());
 
         println!("{:?}", curve.double(&projective_point));
         println!(
@@ -304,11 +304,14 @@ mod tests {
 
         println!();
 
-        println!("{:?}", curve.add(&projective_point, &projective_point2));
+        println!(
+            "{:?}",
+            curve.add(&projective_point, &double_projective_point)
+        );
         println!(
             "{:?}",
             curve
-                .add(&projective_point, &projective_point2)
+                .add(&projective_point, &double_projective_point)
                 .to_affine(&curve)
                 .unwrap()
         );
