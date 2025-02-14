@@ -17,7 +17,7 @@ pub fn show_projective_point(projective_point: &ProjectivePoint) {
 
 pub fn module(x: &BigInt, modulo: &BigInt) -> BigInt {
     if *x < BigInt::zero() {
-        return (modulo + x) % modulo
+        return modulo + x
     }
 
     x % modulo

@@ -165,7 +165,7 @@ impl Curve {
         }
 
         // W := a*Z^2 + 3*X^2
-        let w: BigInt = (&self.a * &point.z * &point.z) % &self.p;
+        let w: BigInt = ((&self.a * &point.z * &point.z) + (3 * &point.x * &point.x)) % &self.p;
 
         // S := Y*Z
         let s: BigInt = (&point.y * &point.z) % &self.p;
@@ -185,7 +185,11 @@ impl Curve {
         // Z' := 8*S^3
         let z: BigInt = (8 * &s * &s * &s) % &self.p;
 
-        ProjectivePoint::new(x, y, z)
+        ProjectivePoint::new(
+            module(&x, &self.p),
+            module(&y, &self.p),
+            module(&z, &self.p)
+        )
     }
 
     fn scalar_mul(&self, scalar: &BigInt) -> ProjectivePoint {
@@ -312,15 +316,16 @@ mod tests {
 
         let double_affine_point = double_projective_point.to_affine(&curve).unwrap();
 
+        // println!("{:?}", double_projective_point);
         println!("{:?}", double_affine_point);
 
         let result: ProjectivePoint = double_affine_point.to_projective();
 
         println!("{:?}", result);
 
-        assert_eq!(result.z, double_z);
-        assert_eq!(result.x, double_x);
-        assert_eq!(result.y, double_y);
+        assert_eq!(result.z % p, double_z % p);
+        assert_eq!(result.x % p, double_x % p);
+        assert_eq!(result.y % p, double_y % p);
     }
 
     // P-256
