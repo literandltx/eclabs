@@ -191,7 +191,7 @@ impl Curve {
         )
     }
 
-    fn scalar_mul(&self, scalar: &BigInt) -> ProjectivePoint {
+    fn scalar_mul(&self, scalar: &BigInt, point: &ProjectivePoint) -> ProjectivePoint {
         ProjectivePoint::neutral()
     }
 }
@@ -420,5 +420,208 @@ mod tests {
         assert_eq!(resut.x, xs);
         assert_eq!(resut.y, ys);
         assert_eq!(resut.z, zs);
+    }
+
+    #[test]
+    fn test_multiply_point_on_scalar() {
+        let p: &BigInt = &BigInt::from_str_radix(
+            "ffffffff00000001000000000000000000000000ffffffffffffffffffffffff",
+            16,
+        )
+        .unwrap();
+        let a: &BigInt = &BigInt::from_str_radix(
+            "ffffffff00000001000000000000000000000000fffffffffffffffffffffffc",
+            16,
+        )
+        .unwrap();
+        let b: &BigInt = &BigInt::from_str_radix(
+            "5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b",
+            16,
+        )
+        .unwrap();
+
+        let curve: Curve = Curve::new(p, a, b).unwrap();
+
+        let x: BigInt = BigInt::from_str_radix(
+            "36468809527719095167323546128622644075555946232974359005635481469739685065250",
+            10,
+        )
+        .unwrap();
+        let y: BigInt = BigInt::from_str_radix(
+            "55086920727300960012414320103293286937832915861215179864890281344876589042713",
+            10,
+        )
+        .unwrap();
+        let z: BigInt = BigInt::from_str_radix("1", 10).unwrap();
+
+        let scalar: BigInt = BigInt::from_str_radix(
+            "50313277712876843208627822877019546215941224990452903113298304423968512062362",
+            10,
+        )
+        .unwrap();
+
+        let x_res: BigInt = BigInt::from_str_radix(
+            "105471300999999635061948442487927318986215238139837487327895353516078990089204",
+            10,
+        )
+        .unwrap();
+        let y_res: BigInt = BigInt::from_str_radix(
+            "102129873108155434225483148806386549747776446537842754889946033852013914809773",
+            10,
+        )
+        .unwrap();
+        let z_res: BigInt = BigInt::from_str_radix("1", 10).unwrap();
+
+        let point: ProjectivePoint = ProjectivePoint::new(x.clone(), y.clone(), z.clone());
+
+        let mul_projective_point: ProjectivePoint = curve.scalar_mul(&scalar, &point);
+
+        let mul_affine_point: AffinePoint = mul_projective_point.to_affine(&curve).unwrap();
+
+        let resut: ProjectivePoint = mul_affine_point.to_projective();
+
+        assert_eq!(resut.x, x_res);
+        assert_eq!(resut.y, y_res);
+        assert_eq!(resut.z, z_res);
+    }
+
+    #[test]
+    fn test_scalar_multiplication_using_order() {
+        let p: &BigInt = &BigInt::from_str_radix(
+            "ffffffff00000001000000000000000000000000ffffffffffffffffffffffff",
+            16,
+        )
+        .unwrap();
+        let a: &BigInt = &BigInt::from_str_radix(
+            "ffffffff00000001000000000000000000000000fffffffffffffffffffffffc",
+            16,
+        )
+        .unwrap();
+        let b: &BigInt = &BigInt::from_str_radix(
+            "5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b",
+            16,
+        )
+        .unwrap();
+
+        let curve: Curve = Curve::new(p, a, b).unwrap();
+
+        let x: BigInt = BigInt::from_str_radix(
+            "88830848574649868340568578826653665181106303545668410351759331370193752307474",
+            10,
+        )
+        .unwrap();
+        let y: BigInt = BigInt::from_str_radix(
+            "22058354116588620035967384506492701987686288267863232015425921192621894353676",
+            10,
+        )
+        .unwrap();
+        let z: BigInt = BigInt::from_str_radix("1", 10).unwrap();
+
+        let scalar: BigInt = BigInt::from_str_radix(
+            "115792089210356248762697446949407573529996955224135760342422259061068512044369",
+            10,
+        )
+        .unwrap();
+
+        let x_res: BigInt = BigInt::from_str_radix("0", 10).unwrap();
+        let y_res: BigInt = BigInt::from_str_radix("1", 10).unwrap();
+        let z_res: BigInt = BigInt::from_str_radix("0", 10).unwrap();
+
+        let point: ProjectivePoint = ProjectivePoint::new(x.clone(), y.clone(), z.clone());
+
+        let mul_projective_point: ProjectivePoint = curve.scalar_mul(&scalar, &point);
+
+        let mul_affine_point: AffinePoint = mul_projective_point.to_affine(&curve).unwrap();
+
+        let resut: ProjectivePoint = mul_affine_point.to_projective();
+
+        assert_eq!(resut.x, x_res);
+        assert_eq!(resut.y, y_res);
+        assert_eq!(resut.z, z_res);
+    }
+
+    #[test]
+    fn test_complex_scalar_multiplication_and_sum() {
+        let p: &BigInt = &BigInt::from_str_radix(
+            "ffffffff00000001000000000000000000000000ffffffffffffffffffffffff",
+            16,
+        )
+        .unwrap();
+        let a: &BigInt = &BigInt::from_str_radix(
+            "ffffffff00000001000000000000000000000000fffffffffffffffffffffffc",
+            16,
+        )
+        .unwrap();
+        let b: &BigInt = &BigInt::from_str_radix(
+            "5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b",
+            16,
+        )
+        .unwrap();
+
+        let curve: Curve = Curve::new(p, a, b).unwrap();
+
+        let x1: BigInt = BigInt::from_str_radix(
+            "42962812987195471550265028018049668228525471650158073055566585942623576308426",
+            10,
+        )
+        .unwrap();
+        let y1: BigInt = BigInt::from_str_radix(
+            "85736017906299720575115626781728330074318681691122158879669393468418823605282",
+            10,
+        )
+        .unwrap();
+        let z1: BigInt = BigInt::from_str_radix("1", 10).unwrap();
+
+        let x2: BigInt = BigInt::from_str_radix(
+            "115453654416017434409541019576558067958554154123817093231752062644606305094870115453654416017434409541019576558067958554154123817093231752062644606305094870",
+            10,
+        )
+            .unwrap();
+        let y2: BigInt = BigInt::from_str_radix(
+            "113576825867421328269022897092212996059028298184297174052451199438117344128029",
+            10,
+        )
+        .unwrap();
+        let z2: BigInt = BigInt::from_str_radix("1", 10).unwrap();
+
+        let scalar1: BigInt = BigInt::from_str_radix(
+            "51744903828951655645998112878951294312407757131136959404777653173288809286437",
+            10,
+        )
+        .unwrap();
+        let scalar2: BigInt = BigInt::from_str_radix(
+            "47255149894527971878307606101838196302615590688404325145363490576551532104959",
+            10,
+        )
+        .unwrap();
+
+        let x_res: BigInt = BigInt::from_str_radix(
+            "4553550298606723614503613575355345616769837055925158630918861136516274250754",
+            10,
+        )
+        .unwrap();
+        let y_res: BigInt = BigInt::from_str_radix(
+            "55240462671849106909136195492796706817980992148608231216795717302256464992045",
+            10,
+        )
+        .unwrap();
+        let z_res: BigInt = BigInt::from_str_radix("1", 10).unwrap();
+
+        let point1: ProjectivePoint = ProjectivePoint::new(x1.clone(), y1.clone(), z1.clone());
+        let point2: ProjectivePoint = ProjectivePoint::new(x2.clone(), y2.clone(), z2.clone());
+
+        let computed_result_projective_point: ProjectivePoint = curve.add(
+            &curve.scalar_mul(&scalar1, &point1),
+            &curve.scalar_mul(&scalar2, &point2),
+        );
+
+        let computed_result_affine_point: AffinePoint =
+            computed_result_projective_point.to_affine(&curve).unwrap();
+
+        let resut: ProjectivePoint = computed_result_affine_point.to_projective();
+
+        assert_eq!(resut.x, x_res);
+        assert_eq!(resut.y, y_res);
+        assert_eq!(resut.z, z_res);
     }
 }
