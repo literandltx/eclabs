@@ -2,6 +2,7 @@ mod helpers;
 
 use num_bigint::BigInt;
 use num_traits::{Num, One, Pow, Zero};
+use crate::helpers::module;
 
 #[derive(Clone, Debug)]
 struct AffinePoint {
@@ -95,60 +96,63 @@ impl Curve {
         left == right
     }
 
-    fn add(&self, point1: &ProjectivePoint, point2: &ProjectivePoint) -> ProjectivePoint {
-        if point1.x == BigInt::zero() && point1.y == BigInt::one() && point1.z == BigInt::zero() {
+    fn add(&self, a: &ProjectivePoint, b: &ProjectivePoint) -> ProjectivePoint {
+        if a.x == BigInt::zero() && a.y == BigInt::one() && a.z == BigInt::zero() {
             return ProjectivePoint::neutral();
         }
 
-        if point2.x == BigInt::zero() && point2.y == BigInt::one() && point2.z == BigInt::zero() {
+        if b.x == BigInt::zero() && b.y == BigInt::one() && b.z == BigInt::zero() {
             return ProjectivePoint::neutral();
         }
 
         // U1 := Y2*Z1
-        let u1: BigInt = point2.y.clone() * point1.z.clone();
+        let u1: BigInt = (&b.y * &a.z) % &self.p;
 
         // U2 := Y1*Z2
-        let u2: BigInt = point1.y.clone() * point2.z.clone();
+        let u2: BigInt = (&a.y * &b.z) % &self.p;
 
         // V1 := X2*Z1
-        let v1: BigInt = point2.x.clone() * point1.z.clone();
+        let v1: BigInt = (&b.x * &a.z) % &self.p;
 
         // V2 := X1*Z2
-        let v2: BigInt = point1.x.clone() * point2.z.clone();
+        let v2: BigInt = (&a.x * &b.z) % &self.p;
 
         if v1 == v2 {
             return if u1 != u2 {
                 ProjectivePoint::neutral()
             } else {
-                self.double(&point1)
+                println!("called double");
+                self.double(&a)
             };
         }
 
         // U := U1 - U2
-        let u: BigInt = u1.clone() - u2.clone();
+        let u: BigInt = (&u1 - &u2) % &self.p;
 
         // V := V1 - V2
-        let v: BigInt = v1.clone() - v2.clone();
+        let v: BigInt = (&v1 - &v2) % &self.p;
 
         // W := Z1*Z2
-        let w: BigInt = point1.z.clone() * point2.z.clone();
+        let w: BigInt = (&a.z * &b.z) % &self.p;
 
         // A := U^2*W - V^3 - 2*V^2*V2
-        let a: BigInt = u.clone() * u.clone() * w.clone()
-            - v.clone() * v.clone() * v.clone()
-            - 2 * v.clone() * v.clone() * v2.clone();
+        let _a: BigInt = (&u * &u * &w - &v * &v * &v - BigInt::from(2) * &v * &v * &v2) % &self.p;
 
         // X3 := V*A
-        let x: BigInt = v.clone() * a.clone();
+        let x: BigInt = (&v * &_a) % &self.p;
 
         // Y3 := U*(V^2*V2 - A) - V^3*U2
-        let y: BigInt = u.clone() * (v.clone() * v.clone() * v2.clone() - a.clone())
-            - v.clone() * v.clone() * v.clone() * u2.clone();
+        let y: BigInt = (&u * (&v * &v * &v2 - &_a) - &v * &v * &v * &u2) % &self.p;
+        let y: BigInt = (&u * (&v * &v * &v2 - &_a) - &v * &v * &v * &u2) % &self.p;
 
         // Z3 := V^3*W
-        let z: BigInt = v.clone() * v.clone() * v.clone() * w.clone();
+        let z: BigInt = (&v * &v * &v * &w) % &self.p;
 
-        ProjectivePoint::new(x % 29, y % 29, z % 29)
+        ProjectivePoint::new(
+            module(&x, &self.p),
+            module(&y, &self.p),
+            module(&z, &self.p)
+        )
     }
 
     fn double(&self, point: &ProjectivePoint) -> ProjectivePoint {
