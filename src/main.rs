@@ -4,6 +4,7 @@ mod prime_generator;
 use crate::helpers::module;
 use num_bigint::BigInt;
 use num_traits::{Num, One, Pow, Zero};
+use crate::prime_generator::PrimeGenerator;
 
 #[derive(Clone, Debug)]
 struct AffinePoint {
@@ -223,19 +224,18 @@ impl Curve {
         r0
     }
 
-    // todo
     fn schoof(&self) -> BigInt {
-        let bound: BigInt = 4 * &self.p.sqrt();
-        let m: BigInt = BigInt::one();
-        let mut t: BigInt = BigInt::zero();
-
-
-        BigInt::one()
+        todo!();
     }
 }
 
-fn main() {}
+fn main() {
+    let mut prime_generator: PrimeGenerator = PrimeGenerator::new();
 
+    println!("{}", prime_generator.next_prime());
+}
+
+// P-256
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -354,12 +354,14 @@ mod tests {
 
         let result: ProjectivePoint = double_affine_point.to_projective();
 
+        let tmp = curve.verify_projective_point(&result);
+        println!("{:?}", tmp);
+
         assert_eq!(result.z, double_z);
         assert_eq!(result.x, double_x);
         assert_eq!(result.y, double_y);
     }
 
-    // P-256
     #[test]
     fn test_add_affine_point_neutral() {
         let p: &BigInt = &BigInt::from_str_radix(
