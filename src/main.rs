@@ -2,9 +2,9 @@ mod helpers;
 mod prime_generator;
 
 use crate::helpers::module;
+use crate::prime_generator::PrimeGenerator;
 use num_bigint::BigInt;
 use num_traits::{Num, One, Pow, Zero};
-use crate::prime_generator::PrimeGenerator;
 
 #[derive(Clone, Debug)]
 struct AffinePoint {
@@ -259,6 +259,43 @@ mod tests {
 
         assert_eq!(&affine_point.x, &x);
         assert_eq!(&affine_point.y, &y);
+    }
+
+    #[test]
+    fn test_no_affine_form_of_neutral() {
+        let p: &BigInt = &BigInt::from_str_radix(
+            "ffffffff00000001000000000000000000000000ffffffffffffffffffffffff",
+            16,
+        )
+            .unwrap();
+        let a: &BigInt = &BigInt::from_str_radix(
+            "ffffffff00000001000000000000000000000000fffffffffffffffffffffffc",
+            16,
+        )
+            .unwrap();
+        let b: &BigInt = &BigInt::from_str_radix(
+            "5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b",
+            16,
+        )
+            .unwrap();
+
+        let curve: Curve = Curve::new(p, a, b).unwrap();
+
+        let x1: BigInt = BigInt::from_str_radix(
+            "0",
+            10,
+        )
+            .unwrap();
+        let y1: BigInt = BigInt::from_str_radix(
+            "1",
+            10,
+        )
+            .unwrap();
+        let z1: BigInt = BigInt::from_str_radix("0", 10).unwrap();
+
+        let point1: ProjectivePoint = ProjectivePoint::new(x1.clone(), y1.clone(), z1.clone());
+
+        assert!(point1.to_affine(&curve).is_none());
     }
 
     #[test]
@@ -791,6 +828,61 @@ mod tests {
     }
 
     #[test]
+    fn test_complex_scalar_multiplication_and_sum_to_neutral() {
+        let p: &BigInt = &BigInt::from_str_radix(
+            "ffffffff00000001000000000000000000000000ffffffffffffffffffffffff",
+            16,
+        )
+            .unwrap();
+        let a: &BigInt = &BigInt::from_str_radix(
+            "ffffffff00000001000000000000000000000000fffffffffffffffffffffffc",
+            16,
+        )
+            .unwrap();
+        let b: &BigInt = &BigInt::from_str_radix(
+            "5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b",
+            16,
+        )
+            .unwrap();
+
+        let curve: Curve = Curve::new(p, a, b).unwrap();
+
+        let x1: BigInt = BigInt::from_str_radix(
+            "33404865307973760982101572896420120260786884941743684464500659354489713797603",
+            10,
+        )
+            .unwrap();
+        let y1: BigInt = BigInt::from_str_radix(
+            "36876760391286198122382864263676877270014017711839896656233225271501426068233",
+            10,
+        )
+            .unwrap();
+        let z1: BigInt = BigInt::from_str_radix("1", 10).unwrap();
+
+        let scalar1: BigInt = BigInt::from_str_radix(
+            "115792089210356248762697446949407573529996955224135760342422259061068512044367",
+            10,
+        )
+            .unwrap();
+        let scalar2: BigInt = BigInt::from_str_radix("2", 10).unwrap();
+
+        let x_res: BigInt = BigInt::from_str_radix("0", 10).unwrap();
+        let y_res: BigInt = BigInt::from_str_radix("1", 10).unwrap();
+        let z_res: BigInt = BigInt::from_str_radix("0", 10).unwrap();
+
+        let point1: ProjectivePoint = ProjectivePoint::new(x1.clone(), y1.clone(), z1.clone());
+
+        let result: ProjectivePoint = curve.add(
+            &curve.scalar_mul(&scalar1, &point1),
+            &curve.scalar_mul(&scalar2, &point1),
+        );
+
+        assert_eq!(result.x, x_res);
+        assert_eq!(result.y, y_res);
+        assert_eq!(result.z, z_res);
+    }
+
+    #[test]
     fn test_complex_scalar_multiplication_and_sum_montgomery() {
         let p: &BigInt = &BigInt::from_str_radix(
             "ffffffff00000001000000000000000000000000ffffffffffffffffffffffff",
@@ -868,6 +960,61 @@ mod tests {
         let computed_result_affine_point: AffinePoint =
             computed_result_projective_point.to_affine(&curve).unwrap();
         let result: ProjectivePoint = computed_result_affine_point.to_projective();
+
+        assert_eq!(result.x, x_res);
+        assert_eq!(result.y, y_res);
+        assert_eq!(result.z, z_res);
+    }
+
+    #[test]
+    fn test_complex_scalar_multiplication_and_sum_to_neutral_montgomery() {
+        let p: &BigInt = &BigInt::from_str_radix(
+            "ffffffff00000001000000000000000000000000ffffffffffffffffffffffff",
+            16,
+        )
+        .unwrap();
+        let a: &BigInt = &BigInt::from_str_radix(
+            "ffffffff00000001000000000000000000000000fffffffffffffffffffffffc",
+            16,
+        )
+        .unwrap();
+        let b: &BigInt = &BigInt::from_str_radix(
+            "5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b",
+            16,
+        )
+        .unwrap();
+
+        let curve: Curve = Curve::new(p, a, b).unwrap();
+
+        let x1: BigInt = BigInt::from_str_radix(
+            "33404865307973760982101572896420120260786884941743684464500659354489713797603",
+            10,
+        )
+        .unwrap();
+        let y1: BigInt = BigInt::from_str_radix(
+            "36876760391286198122382864263676877270014017711839896656233225271501426068233",
+            10,
+        )
+        .unwrap();
+        let z1: BigInt = BigInt::from_str_radix("1", 10).unwrap();
+
+        let scalar1: BigInt = BigInt::from_str_radix(
+            "115792089210356248762697446949407573529996955224135760342422259061068512044367",
+            10,
+        )
+        .unwrap();
+        let scalar2: BigInt = BigInt::from_str_radix("2", 10).unwrap();
+
+        let x_res: BigInt = BigInt::from_str_radix("0", 10).unwrap();
+        let y_res: BigInt = BigInt::from_str_radix("1", 10).unwrap();
+        let z_res: BigInt = BigInt::from_str_radix("0", 10).unwrap();
+
+        let point1: ProjectivePoint = ProjectivePoint::new(x1.clone(), y1.clone(), z1.clone());
+
+        let result: ProjectivePoint = curve.add(
+            &curve.scalar_mul_montgomery(&scalar1, &point1),
+            &curve.scalar_mul_montgomery(&scalar2, &point1),
+        );
 
         assert_eq!(result.x, x_res);
         assert_eq!(result.y, y_res);
