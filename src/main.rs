@@ -704,6 +704,8 @@ mod tests {
         assert_eq!(result.x, x_res);
         assert_eq!(result.y, y_res);
         assert_eq!(result.z, z_res);
+
+        assert!(curve.verify_projective_point(&result));
     }
 
     #[test]
