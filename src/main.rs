@@ -1,8 +1,8 @@
 mod helpers;
 mod prime_generator;
 
-use crate::helpers::module;
-use crate::prime_generator::PrimeGenerator;
+use crate::helpers::{generate_random_bigint, module};
+use num::integer::Roots;
 use num_bigint::BigInt;
 use num_traits::{Num, One, Pow, Zero};
 
@@ -83,7 +83,7 @@ impl Curve {
         let left: BigInt = point.clone().y.pow(2u32);
         let right: BigInt = point.clone().x.pow(3u32) + &self.a * point.clone().x + &self.b;
 
-        left == right
+        (left) % &self.p == (right) % &self.p
     }
 
     fn verify_projective_point(&self, point: &ProjectivePoint) -> bool {
@@ -95,7 +95,7 @@ impl Curve {
         let right: BigInt =
             point.clone().x.pow(3u32) + &self.a * z2 * point.clone().x + &self.b * z3;
 
-        left == right
+        (left) % &self.p == (right) % &self.p
     }
 
     fn add(&self, a: &ProjectivePoint, b: &ProjectivePoint) -> ProjectivePoint {
@@ -224,15 +224,60 @@ impl Curve {
         r0
     }
 
+    fn get_generator(&self) -> ProjectivePoint {
+        let gen_x: BigInt = BigInt::from_str_radix(
+            "6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296",
+            16,
+        )
+        .unwrap();
+        let gen_y: BigInt = BigInt::from_str_radix(
+            "4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5",
+            16,
+        )
+        .unwrap();
+
+        ProjectivePoint::new(gen_x, gen_y, BigInt::one())
+    }
+
+    fn get_order(&self) -> BigInt {
+        BigInt::from_str_radix(
+            "115792089210356248762697446949407573529996955224135760342422259061068512044369",
+            10,
+        )
+        .unwrap()
+    }
+
+    fn generate_random_projective_point_p256(&self) -> ProjectivePoint {
+        let rand: BigInt = generate_random_bigint(128);
+
+        assert!(
+            self.verify_projective_point(&self.get_generator()),
+            "The generator do not lay on current curve"
+        );
+
+        let random_point: ProjectivePoint = self
+            .scalar_mul_montgomery(&rand, &self.get_generator())
+            .to_affine(&self)
+            .unwrap()
+            .to_projective();
+
+        assert!(
+            self.verify_projective_point(&random_point),
+            "The point do not lay on current curve"
+        );
+
+        random_point
+    }
+
     fn schoof(&self) -> BigInt {
         todo!();
     }
 }
 
 fn main() {
-    let mut prime_generator: PrimeGenerator = PrimeGenerator::new();
 
-    println!("{}", prime_generator.next_prime());
+    // let mut prime_generator: PrimeGenerator = PrimeGenerator::new();
+    // println!("{}", prime_generator.next_prime());
 }
 
 // P-256
@@ -267,30 +312,22 @@ mod tests {
             "ffffffff00000001000000000000000000000000ffffffffffffffffffffffff",
             16,
         )
-            .unwrap();
+        .unwrap();
         let a: &BigInt = &BigInt::from_str_radix(
             "ffffffff00000001000000000000000000000000fffffffffffffffffffffffc",
             16,
         )
-            .unwrap();
+        .unwrap();
         let b: &BigInt = &BigInt::from_str_radix(
             "5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b",
             16,
         )
-            .unwrap();
+        .unwrap();
 
         let curve: Curve = Curve::new(p, a, b).unwrap();
 
-        let x1: BigInt = BigInt::from_str_radix(
-            "0",
-            10,
-        )
-            .unwrap();
-        let y1: BigInt = BigInt::from_str_radix(
-            "1",
-            10,
-        )
-            .unwrap();
+        let x1: BigInt = BigInt::from_str_radix("0", 10).unwrap();
+        let y1: BigInt = BigInt::from_str_radix("1", 10).unwrap();
         let z1: BigInt = BigInt::from_str_radix("0", 10).unwrap();
 
         let point1: ProjectivePoint = ProjectivePoint::new(x1.clone(), y1.clone(), z1.clone());
@@ -671,20 +708,13 @@ mod tests {
         .unwrap();
         let z: BigInt = BigInt::from_str_radix("1", 10).unwrap();
 
-        let order: BigInt = BigInt::from_str_radix(
-            // "ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551",
-            "115792089210356248762697446949407573529996955224135760342422259061068512044369",
-            10,
-        )
-        .unwrap();
-
         let x_res: BigInt = BigInt::from_str_radix("0", 10).unwrap();
         let y_res: BigInt = BigInt::from_str_radix("1", 10).unwrap();
         let z_res: BigInt = BigInt::from_str_radix("0", 10).unwrap();
 
         let point: ProjectivePoint = ProjectivePoint::new(x.clone(), y.clone(), z.clone());
 
-        let result: ProjectivePoint = curve.scalar_mul(&order, &point);
+        let result: ProjectivePoint = curve.scalar_mul(&curve.get_order(), &point);
 
         assert_eq!(result.x, x_res);
         assert_eq!(result.y, y_res);
@@ -723,20 +753,13 @@ mod tests {
         .unwrap();
         let z: BigInt = BigInt::from_str_radix("1", 10).unwrap();
 
-        let order: BigInt = BigInt::from_str_radix(
-            // "ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551",
-            "115792089210356248762697446949407573529996955224135760342422259061068512044369",
-            10,
-        )
-        .unwrap();
-
         let x_res: BigInt = BigInt::from_str_radix("0", 10).unwrap();
         let y_res: BigInt = BigInt::from_str_radix("1", 10).unwrap();
         let z_res: BigInt = BigInt::from_str_radix("0", 10).unwrap();
 
         let point: ProjectivePoint = ProjectivePoint::new(x.clone(), y.clone(), z.clone());
 
-        let result: ProjectivePoint = curve.scalar_mul_montgomery(&order, &point);
+        let result: ProjectivePoint = curve.scalar_mul_montgomery(&curve.get_order(), &point);
 
         assert_eq!(result.x, x_res);
         assert_eq!(result.y, y_res);
@@ -835,17 +858,17 @@ mod tests {
             "ffffffff00000001000000000000000000000000ffffffffffffffffffffffff",
             16,
         )
-            .unwrap();
+        .unwrap();
         let a: &BigInt = &BigInt::from_str_radix(
             "ffffffff00000001000000000000000000000000fffffffffffffffffffffffc",
             16,
         )
-            .unwrap();
+        .unwrap();
         let b: &BigInt = &BigInt::from_str_radix(
             "5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b",
             16,
         )
-            .unwrap();
+        .unwrap();
 
         let curve: Curve = Curve::new(p, a, b).unwrap();
 
@@ -853,19 +876,19 @@ mod tests {
             "33404865307973760982101572896420120260786884941743684464500659354489713797603",
             10,
         )
-            .unwrap();
+        .unwrap();
         let y1: BigInt = BigInt::from_str_radix(
             "36876760391286198122382864263676877270014017711839896656233225271501426068233",
             10,
         )
-            .unwrap();
+        .unwrap();
         let z1: BigInt = BigInt::from_str_radix("1", 10).unwrap();
 
         let scalar1: BigInt = BigInt::from_str_radix(
             "115792089210356248762697446949407573529996955224135760342422259061068512044367",
             10,
         )
-            .unwrap();
+        .unwrap();
         let scalar2: BigInt = BigInt::from_str_radix("2", 10).unwrap();
 
         let x_res: BigInt = BigInt::from_str_radix("0", 10).unwrap();
@@ -1021,5 +1044,32 @@ mod tests {
         assert_eq!(result.x, x_res);
         assert_eq!(result.y, y_res);
         assert_eq!(result.z, z_res);
+    }
+
+    #[test]
+    fn test_random_curve_mul_order() {
+        let p: &BigInt = &BigInt::from_str_radix(
+            "ffffffff00000001000000000000000000000000ffffffffffffffffffffffff",
+            16,
+        )
+        .unwrap();
+        let a: &BigInt = &BigInt::from_str_radix(
+            "ffffffff00000001000000000000000000000000fffffffffffffffffffffffc",
+            16,
+        )
+        .unwrap();
+        let b: &BigInt = &BigInt::from_str_radix(
+            "5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b",
+            16,
+        )
+        .unwrap();
+
+        let curve: Curve = Curve::new(p, a, b).unwrap();
+
+        let random_point: ProjectivePoint = curve.generate_random_projective_point_p256();
+
+        println!("{:?}", random_point);
+
+        &curve.scalar_mul_montgomery(&curve.get_order(), &random_point);
     }
 }
