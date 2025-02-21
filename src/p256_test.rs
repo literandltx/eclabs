@@ -797,9 +797,144 @@ mod correctness {
 
 #[cfg(test)]
 mod speed_metrics {
-    use super::*;
-    use crate::{AffinePoint, Curve, ProjectivePoint};
+    use std::time::Instant;
+    use num_bigint::BigInt;
+    use crate::{Curve, helpers, ProjectivePoint};
+
 
     #[test]
-    fn test() {}
+    fn test_generate_random_projective_point_p256() {
+        let curve: Curve = helpers::get_curve();
+
+        let method_to_run = || -> u128 {
+            let start_time: Instant = Instant::now();
+
+            Curve::generate_random_projective_point_p256(&curve);
+
+            let end_time: Instant = Instant::now();
+
+            end_time.duration_since(start_time).as_nanos()
+        };
+
+        helpers::measure_average_execution_time("generate_random_projective_point_p256", method_to_run, 100);
+    }
+
+    #[test]
+    fn test_verify_affine_point() {
+        let curve: Curve = helpers::get_curve();
+
+        let method_to_run = || -> u128 {
+            let point1: ProjectivePoint = curve.generate_random_projective_point_p256();
+
+            let start_time: Instant = Instant::now();
+
+            curve.verify_affine_point(&point1.to_affine(&curve).unwrap());
+
+            let end_time: Instant = Instant::now();
+
+            end_time.duration_since(start_time).as_nanos()
+        };
+
+        helpers::measure_average_execution_time("verify_affine_point", method_to_run, 100);
+    }
+
+    #[test]
+    fn test_verify_projective_point() {
+        let curve: Curve = helpers::get_curve();
+
+        let method_to_run = || -> u128 {
+            let point1: ProjectivePoint = curve.generate_random_projective_point_p256();
+
+            let start_time: Instant = Instant::now();
+
+            curve.verify_projective_point(&point1);
+
+            let end_time: Instant = Instant::now();
+
+            end_time.duration_since(start_time).as_nanos()
+        };
+
+        helpers::measure_average_execution_time("verify_projective_point", method_to_run, 100);
+    }
+
+    #[test]
+    fn test_add() {
+        let curve: Curve = helpers::get_curve();
+
+
+        let method_to_run = || -> u128 {
+            let point1: ProjectivePoint = curve.generate_random_projective_point_p256();
+            let point2: ProjectivePoint = curve.generate_random_projective_point_p256();
+
+            let start_time: Instant = Instant::now();
+
+            curve.add(&point1, &point2);
+
+            let end_time: Instant = Instant::now();
+
+            end_time.duration_since(start_time).as_nanos()
+        };
+
+        helpers::measure_average_execution_time("add", method_to_run, 100);
+    }
+
+    #[test]
+    fn test_double() {
+        let curve: Curve = helpers::get_curve();
+
+
+        let method_to_run = || -> u128 {
+            let point1: ProjectivePoint = curve.generate_random_projective_point_p256();
+
+            let start_time: Instant = Instant::now();
+
+            curve.double(&point1);
+
+            let end_time: Instant = Instant::now();
+
+            end_time.duration_since(start_time).as_nanos()
+        };
+
+        helpers::measure_average_execution_time("double", method_to_run, 100);
+    }
+
+    #[test]
+    fn test_scalar_mul() {
+        let curve: Curve = helpers::get_curve();
+
+        let method_to_run = || -> u128 {
+            let point: ProjectivePoint = curve.generate_random_projective_point_p256();
+            let scalar: BigInt = helpers::generate_random_bigint(curve.p.bits() as usize);
+
+            let start_time: Instant = Instant::now();
+
+            curve.scalar_mul(&scalar, &point);
+
+            let end_time: Instant = Instant::now();
+
+            end_time.duration_since(start_time).as_nanos()
+        };
+
+        helpers::measure_average_execution_time("scalar_mul", method_to_run, 100);
+    }
+
+    #[test]
+    fn test_scalar_mul_montgomery() {
+        let curve: Curve = helpers::get_curve();
+
+        let method_to_run = || -> u128 {
+            let point: ProjectivePoint = curve.generate_random_projective_point_p256();
+            let scalar: BigInt = helpers::generate_random_bigint(curve.p.bits() as usize);
+
+            let start_time: Instant = Instant::now();
+
+            curve.scalar_mul_montgomery(&scalar, &point);
+
+            let end_time: Instant = Instant::now();
+
+            end_time.duration_since(start_time).as_nanos()
+        };
+
+        helpers::measure_average_execution_time("scalar_mul_montgomery", method_to_run, 100);
+    }
 }
