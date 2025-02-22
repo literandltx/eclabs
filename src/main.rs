@@ -243,7 +243,7 @@ impl Curve {
         .unwrap()
     }
 
-    fn generate_random_projective_point_p256(&self) -> ProjectivePoint {
+    fn generate_random_projective_point_p256_naive(&self) -> ProjectivePoint {
         let rand: BigInt = generate_random_bigint(128);
 
         assert!(
@@ -265,7 +265,7 @@ impl Curve {
         random_point
     }
 
-    fn generate_random_projective_point(&self) -> ProjectivePoint {
+    fn generate_random_projective_point_p256(&self) -> ProjectivePoint {
         let rand: BigInt = generate_random_bigint(128);
 
         let left: BigInt = (rand.clone().pow(3u32) + &self.a * rand.clone() + &self.b) % &self.p;
@@ -277,7 +277,7 @@ impl Curve {
 
         match self.verify_projective_point(&point) {
             true => point,
-            false => self.generate_random_projective_point()
+            false => self.generate_random_projective_point_p256()
         }
     }
 }
