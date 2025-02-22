@@ -16,38 +16,40 @@ pub fn module(x: &BigInt, modulo: &BigInt) -> BigInt {
 }
 
 pub fn generate_random_bigint(bit_length: usize) -> BigInt {
+    let num_bytes: usize = (bit_length + 7) / 8;
+    let mask: BigInt = (BigInt::one() << bit_length) - BigInt::one();
+
     let mut rng: ThreadRng = rand::rng();
     let mut result: BigInt = BigInt::zero();
 
-    for i in 0..bit_length {
-        let bit: bool = rng.random();
+    let random_bytes: Vec<u8> = (0..num_bytes).map(|_| rng.random()).collect();
 
-        if bit {
-            result += BigInt::from(1u32) << i;
-        }
+    for (i, byte) in random_bytes.iter().enumerate() {
+        result += BigInt::from(*byte) << (i * 8);
     }
 
-    result
+    result & mask
 }
 
-pub fn get_curve() -> Curve {
+pub fn get_curve_p256() -> Curve {
     let p: BigInt = BigInt::from_str_radix(
         "ffffffff00000001000000000000000000000000ffffffffffffffffffffffff",
         16,
     )
-    .unwrap();
+    .expect("Failed to parse curve parameter p");
     let a: BigInt = BigInt::from_str_radix(
         "ffffffff00000001000000000000000000000000fffffffffffffffffffffffc",
         16,
     )
-    .unwrap();
+    .expect("Failed to parse curve parameter a");
     let b: BigInt = BigInt::from_str_radix(
         "5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b",
         16,
     )
-    .unwrap();
+    .expect("Failed to parse curve parameter b");
 
-    Curve::new(p, a, b).unwrap()
+    Curve::new(p, a, b)
+        .expect("Failed to create curve")
 }
 
 pub fn measure_average_execution_time<F>(method_name: &str, method_to_run: F, iterations: usize)

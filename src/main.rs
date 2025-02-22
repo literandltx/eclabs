@@ -265,11 +265,21 @@ impl Curve {
         random_point
     }
 
-    fn schoof(&self) -> BigInt {
-        todo!();
+    fn generate_random_projective_point(&self) -> ProjectivePoint {
+        let rand: BigInt = generate_random_bigint(128);
+
+        let left: BigInt = (rand.clone().pow(3u32) + &self.a * rand.clone() + &self.b) % &self.p;
+
+        // todo: impl sqrt(right) mod p
+        let sqrt: BigInt = left.clone();
+
+        let point: ProjectivePoint = ProjectivePoint::new(rand, sqrt, BigInt::one());
+
+        match self.verify_projective_point(&point) {
+            true => point,
+            false => self.generate_random_projective_point()
+        }
     }
 }
 
-fn main() {
-
-}
+fn main() {}
