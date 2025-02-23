@@ -4,7 +4,7 @@ use num_traits::{Num, One};
 #[cfg(test)]
 mod correctness {
     use super::*;
-    use crate::{helpers, AffinePoint, Curve, ProjectivePoint};
+    use crate::{AffinePoint, Curve, ProjectivePoint};
 
     #[test]
     fn test_map_to_affine_point_trivial() {
@@ -150,7 +150,7 @@ mod correctness {
         let result: ProjectivePoint = double_affine_point.to_projective();
 
         let tmp = curve.verify_projective_point(&result);
-        // println!("{:?}", tmp);
+        println!("{:?}", tmp);
 
         assert_eq!(result.z, double_z);
         assert_eq!(result.x, double_x);
@@ -787,37 +787,28 @@ mod correctness {
 
         let curve: Curve = Curve::new(p, a, b).unwrap();
 
-        let random_point: ProjectivePoint = curve.generate_random_projective_point_p256();
+        let random_point: ProjectivePoint = curve.generate_random_projective_point_p256_naive();
 
-        // println!("{:?}", random_point);
+        println!("{:?}", random_point);
 
         let _ = &curve.scalar_mul_montgomery(&curve.get_order(), &random_point);
-    }
-
-    #[test]
-    fn test_generate_random_projective_point_p256_fast() {
-        let curve: Curve = helpers::get_curve();
-
-        let point = &curve.generate_random_projective_point_p256_fast();
-
-        assert!(curve.verify_projective_point(point));
     }
 }
 
 #[cfg(test)]
-mod speed_metrics {
+mod speed {
     use crate::{helpers, Curve, ProjectivePoint};
     use num_bigint::BigInt;
     use std::time::Instant;
 
     #[test]
-    fn test_generate_random_projective_point_p256() {
-        let curve: Curve = helpers::get_curve();
+    fn test_generate_random_projective_point() {
+        let curve: Curve = helpers::get_curve_p256();
 
         let method_to_run = || -> u128 {
             let start_time: Instant = Instant::now();
 
-            Curve::generate_random_projective_point_p256(&curve);
+            curve.generate_random_projective_point_p256_naive();
 
             let end_time: Instant = Instant::now();
 
@@ -832,36 +823,15 @@ mod speed_metrics {
     }
 
     #[test]
-    fn test_generate_random_projective_point_p256_fast() {
-        let curve: Curve = helpers::get_curve();
-
-        let method_to_run = || -> u128 {
-            let start_time: Instant = Instant::now();
-
-            Curve::generate_random_projective_point_p256_fast(&curve);
-
-            let end_time: Instant = Instant::now();
-
-            end_time.duration_since(start_time).as_nanos()
-        };
-
-        helpers::measure_average_execution_time(
-            "generate_random_projective_point_p256_fast",
-            method_to_run,
-            100,
-        );
-    }
-
-    #[test]
     fn test_verify_affine_point() {
-        let curve: Curve = helpers::get_curve();
+        let curve: Curve = helpers::get_curve_p256();
 
         let method_to_run = || -> u128 {
-            let point1: ProjectivePoint = curve.generate_random_projective_point_p256();
+            let point: ProjectivePoint = curve.generate_random_projective_point_p256_naive();
 
             let start_time: Instant = Instant::now();
 
-            curve.verify_affine_point(&point1.to_affine(&curve).unwrap());
+            curve.verify_affine_point(&point.to_affine(&curve).unwrap());
 
             let end_time: Instant = Instant::now();
 
@@ -873,14 +843,14 @@ mod speed_metrics {
 
     #[test]
     fn test_verify_projective_point() {
-        let curve: Curve = helpers::get_curve();
+        let curve: Curve = helpers::get_curve_p256();
 
         let method_to_run = || -> u128 {
-            let point1: ProjectivePoint = curve.generate_random_projective_point_p256();
+            let point: ProjectivePoint = curve.generate_random_projective_point_p256_naive();
 
             let start_time: Instant = Instant::now();
 
-            curve.verify_projective_point(&point1);
+            curve.verify_projective_point(&point);
 
             let end_time: Instant = Instant::now();
 
@@ -892,11 +862,11 @@ mod speed_metrics {
 
     #[test]
     fn test_add() {
-        let curve: Curve = helpers::get_curve();
+        let curve: Curve = helpers::get_curve_p256();
 
         let method_to_run = || -> u128 {
-            let point1: ProjectivePoint = curve.generate_random_projective_point_p256();
-            let point2: ProjectivePoint = curve.generate_random_projective_point_p256();
+            let point1: ProjectivePoint = curve.generate_random_projective_point_p256_naive();
+            let point2: ProjectivePoint = curve.generate_random_projective_point_p256_naive();
 
             let start_time: Instant = Instant::now();
 
@@ -912,14 +882,14 @@ mod speed_metrics {
 
     #[test]
     fn test_double() {
-        let curve: Curve = helpers::get_curve();
+        let curve: Curve = helpers::get_curve_p256();
 
         let method_to_run = || -> u128 {
-            let point1: ProjectivePoint = curve.generate_random_projective_point_p256();
+            let point: ProjectivePoint = curve.generate_random_projective_point_p256_naive();
 
             let start_time: Instant = Instant::now();
 
-            curve.double(&point1);
+            curve.double(&point);
 
             let end_time: Instant = Instant::now();
 
@@ -931,10 +901,10 @@ mod speed_metrics {
 
     #[test]
     fn test_scalar_mul() {
-        let curve: Curve = helpers::get_curve();
+        let curve: Curve = helpers::get_curve_p256();
 
         let method_to_run = || -> u128 {
-            let point: ProjectivePoint = curve.generate_random_projective_point_p256();
+            let point: ProjectivePoint = curve.generate_random_projective_point_p256_naive();
             let scalar: BigInt = helpers::generate_random_bigint(curve.p.bits() as usize);
 
             let start_time: Instant = Instant::now();
@@ -951,10 +921,10 @@ mod speed_metrics {
 
     #[test]
     fn test_scalar_mul_montgomery() {
-        let curve: Curve = helpers::get_curve();
+        let curve: Curve = helpers::get_curve_p256();
 
         let method_to_run = || -> u128 {
-            let point: ProjectivePoint = curve.generate_random_projective_point_p256();
+            let point: ProjectivePoint = curve.generate_random_projective_point_p256_naive();
             let scalar: BigInt = helpers::generate_random_bigint(curve.p.bits() as usize);
 
             let start_time: Instant = Instant::now();

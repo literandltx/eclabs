@@ -2,6 +2,7 @@ pub struct PrimeGenerator {
     current: u64,
 }
 
+#[allow(unused)]
 impl PrimeGenerator {
     pub fn new() -> Self {
         PrimeGenerator { current: 1 }
@@ -24,6 +25,7 @@ impl PrimeGenerator {
 }
 
 // todo
+#[allow(unused)]
 fn is_prime(n: &u64) -> bool {
     if *n <= 1 {
         return false;
