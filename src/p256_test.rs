@@ -150,7 +150,7 @@ mod correctness {
         let result: ProjectivePoint = double_affine_point.to_projective();
 
         let tmp = curve.verify_projective_point(&result);
-        println!("{:?}", tmp);
+        // println!("{:?}", tmp);
 
         assert_eq!(result.z, double_z);
         assert_eq!(result.x, double_x);
@@ -789,7 +789,7 @@ mod correctness {
 
         let random_point: ProjectivePoint = curve.generate_random_projective_point_p256_naive();
 
-        println!("{:?}", random_point);
+        // println!("{:?}", random_point);
 
         let _ = &curve.scalar_mul_montgomery(&curve.get_order(), &random_point);
     }
@@ -817,6 +817,27 @@ mod speed {
 
         helpers::measure_average_execution_time(
             "generate_random_projective_point_p256",
+            method_to_run,
+            100,
+        );
+    }
+
+    #[test]
+    fn test_generate_random_projective_point_p256_fast() {
+        let curve: Curve = helpers::get_curve_p256();
+
+        let method_to_run = || -> u128 {
+            let start_time: Instant = Instant::now();
+
+            Curve::generate_random_projective_point_p256_fast(&curve);
+
+            let end_time: Instant = Instant::now();
+
+            end_time.duration_since(start_time).as_nanos()
+        };
+
+        helpers::measure_average_execution_time(
+            "generate_random_projective_point_p256_fast",
             method_to_run,
             100,
         );
