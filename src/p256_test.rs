@@ -4,7 +4,7 @@ use num_traits::{Num, One};
 #[cfg(test)]
 mod correctness {
     use super::*;
-    use crate::{AffinePoint, Curve, ProjectivePoint};
+    use crate::{helpers, AffinePoint, Curve, ProjectivePoint};
 
     #[test]
     fn test_map_to_affine_point_trivial() {
@@ -150,7 +150,7 @@ mod correctness {
         let result: ProjectivePoint = double_affine_point.to_projective();
 
         let tmp = curve.verify_projective_point(&result);
-        println!("{:?}", tmp);
+        // println!("{:?}", tmp);
 
         assert_eq!(result.z, double_z);
         assert_eq!(result.x, double_x);
@@ -789,18 +789,26 @@ mod correctness {
 
         let random_point: ProjectivePoint = curve.generate_random_projective_point_p256();
 
-        println!("{:?}", random_point);
+        // println!("{:?}", random_point);
 
         let _ = &curve.scalar_mul_montgomery(&curve.get_order(), &random_point);
+    }
+
+    #[test]
+    fn test_generate_random_projective_point_p256_fast() {
+        let curve: Curve = helpers::get_curve();
+
+        let point = &curve.generate_random_projective_point_p256_fast();
+
+        assert!(curve.verify_projective_point(point));
     }
 }
 
 #[cfg(test)]
 mod speed_metrics {
-    use std::time::Instant;
+    use crate::{helpers, Curve, ProjectivePoint};
     use num_bigint::BigInt;
-    use crate::{Curve, helpers, ProjectivePoint};
-
+    use std::time::Instant;
 
     #[test]
     fn test_generate_random_projective_point_p256() {
@@ -816,7 +824,32 @@ mod speed_metrics {
             end_time.duration_since(start_time).as_nanos()
         };
 
-        helpers::measure_average_execution_time("generate_random_projective_point_p256", method_to_run, 100);
+        helpers::measure_average_execution_time(
+            "generate_random_projective_point_p256",
+            method_to_run,
+            100,
+        );
+    }
+
+    #[test]
+    fn test_generate_random_projective_point_p256_fast() {
+        let curve: Curve = helpers::get_curve();
+
+        let method_to_run = || -> u128 {
+            let start_time: Instant = Instant::now();
+
+            Curve::generate_random_projective_point_p256_fast(&curve);
+
+            let end_time: Instant = Instant::now();
+
+            end_time.duration_since(start_time).as_nanos()
+        };
+
+        helpers::measure_average_execution_time(
+            "generate_random_projective_point_p256_fast",
+            method_to_run,
+            100,
+        );
     }
 
     #[test]
@@ -861,7 +894,6 @@ mod speed_metrics {
     fn test_add() {
         let curve: Curve = helpers::get_curve();
 
-
         let method_to_run = || -> u128 {
             let point1: ProjectivePoint = curve.generate_random_projective_point_p256();
             let point2: ProjectivePoint = curve.generate_random_projective_point_p256();
@@ -881,7 +913,6 @@ mod speed_metrics {
     #[test]
     fn test_double() {
         let curve: Curve = helpers::get_curve();
-
 
         let method_to_run = || -> u128 {
             let point1: ProjectivePoint = curve.generate_random_projective_point_p256();

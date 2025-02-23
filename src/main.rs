@@ -265,11 +265,25 @@ impl Curve {
         random_point
     }
 
+    fn generate_random_projective_point_p256_fast(&self) -> ProjectivePoint {
+        loop {
+            let x: BigInt = helpers::generate_random_bigint(128);
+            let n: BigInt = x.clone().pow(3u32) + &self.a * x.clone() + &self.b;
+
+            let check_value: BigInt =
+                n.modpow(&((&self.p - BigInt::one()) / BigInt::from(2u32)), &self.p);
+            if check_value.eq(&BigInt::one()) {
+                // check is there existing solutions
+                let k: BigInt = (&self.p - BigInt::from(3u32)) / BigInt::from(4u32);
+                let y: BigInt = n.modpow(&(k + BigInt::one()), &self.p);
+                return ProjectivePoint::new(x, y, BigInt::one());
+            }
+        }
+    }
+
     fn schoof(&self) -> BigInt {
         todo!();
     }
 }
 
-fn main() {
-
-}
+fn main() {}
