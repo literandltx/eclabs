@@ -63,7 +63,7 @@ where
     }
 
     let avg_duration_in_nano: u128 = total_duration_in_nano / iterations as u128;
-    let avg_duration_in_millis: u128 = avg_duration_in_nano / 1_000_000;
+    let avg_duration_in_millis: f64 = avg_duration_in_nano as f64 / 1_000_000.;
 
     println!();
     println!("Operation called: {}", method_name);
