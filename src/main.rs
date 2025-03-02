@@ -5,6 +5,9 @@ mod prime_generator;
 use crate::helpers::{generate_random_bigint, module};
 use num_bigint::BigInt;
 use num_traits::{Num, One, Pow, Zero};
+use rand::Rng;
+
+use num_bigint::RandBigInt;
 
 #[derive(Clone, Debug)]
 struct AffinePoint {
@@ -278,7 +281,7 @@ impl Curve {
             if check_value.eq(&BigInt::one()) {
                 let k: BigInt = (&self.p - BigInt::from(3u32)) / BigInt::from(4u32);
 
-                // y = +right^(k + 1)
+                // y = + right^(k + 1)
                 let y: BigInt = right.modpow(&(k + BigInt::one()), &self.p);
 
                 return ProjectivePoint::new(x, y, BigInt::one());
@@ -287,4 +290,34 @@ impl Curve {
     }
 }
 
-fn main() {}
+struct Actor {
+    curve: Curve,
+    sk: BigInt,
+}
+
+impl Actor {
+    fn new(curve: Curve) -> Actor {
+        let mut rng = rand::thread_rng();
+        let sk: BigInt =
+            RandBigInt::gen_bigint_range(&mut rng, &BigInt::from(2u32), &curve.get_order());
+        Actor { curve, sk }
+    }
+
+    // fn key_rotate(&mut self) {
+    //     let mut rng = rand::thread_rng();
+    //     self.sk = RandBigInt::gen_bigint_range(&mut rng, &BigInt::from(2u32), &self.curve.get_order());
+    // }
+    fn generate_pre_key(&self, base_point: &ProjectivePoint) -> ProjectivePoint {
+        self.curve.scalar_mul(&self.sk, &base_point)
+    }
+
+    fn compute_common_secret(&self, pre_key: &ProjectivePoint) -> BigInt {
+        let common_point = self.curve.scalar_mul(&self.sk, &pre_key).to_affine(&self.curve);
+
+        common_point.unwrap().x
+    }
+}
+
+fn main() {
+
+}

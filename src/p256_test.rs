@@ -4,7 +4,7 @@ use num_traits::{Num, One};
 #[cfg(test)]
 mod correctness {
     use super::*;
-    use crate::{AffinePoint, Curve, ProjectivePoint};
+    use crate::{helpers, Actor, AffinePoint, Curve, ProjectivePoint};
 
     #[test]
     fn test_map_to_affine_point_trivial() {
@@ -793,11 +793,28 @@ mod correctness {
 
         let _ = &curve.scalar_mul_montgomery(&curve.get_order(), &random_point);
     }
+
+    #[test]
+    fn test_diffie_hellman_key_exchange() {
+        let curve: Curve = helpers::get_curve_p256();
+        let base_point: ProjectivePoint = curve.generate_random_projective_point_p256_fast();
+
+        let alice: Actor = Actor::new(helpers::get_curve_p256());
+        let bob: Actor = Actor::new(helpers::get_curve_p256());
+
+        let alice_pre_key: ProjectivePoint = alice.generate_pre_key(&base_point);
+        let bob_pre_key: ProjectivePoint = bob.generate_pre_key(&base_point);
+
+        let alice_key: BigInt = alice.compute_common_secret(&bob_pre_key);
+        let bob_key: BigInt = bob.compute_common_secret(&alice_pre_key);
+
+        assert!(alice_key.eq(&bob_key));
+    }
 }
 
 #[cfg(test)]
 mod speed {
-    use crate::{helpers, Curve, ProjectivePoint};
+    use crate::{helpers, Actor, Curve, ProjectivePoint};
     use num_bigint::BigInt;
     use std::time::Instant;
 
@@ -958,5 +975,39 @@ mod speed {
         };
 
         helpers::measure_average_execution_time("scalar_mul_montgomery", method_to_run, 100);
+    }
+
+    #[test]
+    fn test_diffie_hellman_pre_key_computation() {
+        let method_to_run = || -> u128 {
+            let alice: Actor = Actor::new(helpers::get_curve_p256());
+            let curve: Curve = helpers::get_curve_p256();
+            let base_point: ProjectivePoint = curve.generate_random_projective_point_p256_fast();
+
+            let start_time: Instant = Instant::now();
+            alice.generate_pre_key(&base_point);
+            let end_time: Instant = Instant::now();
+
+            end_time.duration_since(start_time).as_nanos()
+        };
+
+        helpers::measure_average_execution_time("diffie_hellman_pre_key_computation", method_to_run, 100);
+    }
+
+    #[test]
+    fn test_diffie_hellman_key_computation() {
+        let method_to_run = || -> u128 {
+            let alice: Actor = Actor::new(helpers::get_curve_p256());
+            let curve: Curve = helpers::get_curve_p256();
+            let bob_pre_key: ProjectivePoint = curve.generate_random_projective_point_p256_fast();
+
+            let start_time: Instant = Instant::now();
+            alice.compute_common_secret(&bob_pre_key);
+            let end_time: Instant = Instant::now();
+
+            end_time.duration_since(start_time).as_nanos()
+        };
+
+        helpers::measure_average_execution_time("diffie_hellman_key_computation", method_to_run, 100);
     }
 }

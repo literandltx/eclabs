@@ -19,10 +19,10 @@ pub fn generate_random_bigint(bit_length: usize) -> BigInt {
     let num_bytes: usize = (bit_length + 7) / 8;
     let mask: BigInt = (BigInt::one() << bit_length) - BigInt::one();
 
-    let mut rng: ThreadRng = rand::rng();
+    let mut rng: ThreadRng = rand::thread_rng();
     let mut result: BigInt = BigInt::zero();
 
-    let random_bytes: Vec<u8> = (0..num_bytes).map(|_| rng.random()).collect();
+    let random_bytes: Vec<u8> = (0..num_bytes).map(|_| rng.gen()).collect();
 
     for (i, byte) in random_bytes.iter().enumerate() {
         result += BigInt::from(*byte) << (i * 8);
@@ -48,8 +48,7 @@ pub fn get_curve_p256() -> Curve {
     )
     .expect("Failed to parse curve parameter b");
 
-    Curve::new(p, a, b)
-        .expect("Failed to create curve")
+    Curve::new(p, a, b).expect("Failed to create curve")
 }
 
 pub fn measure_average_execution_time<F>(method_name: &str, method_to_run: F, iterations: usize)
