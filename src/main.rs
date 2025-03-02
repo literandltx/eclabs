@@ -424,8 +424,8 @@ impl Actor {
             (_, r) = x.div_mod_floor(&n);
         }
 
-        let (_, s) =
-            (BigInt::modinv(&k, &n).unwrap() * (h + self.sign_sk.clone() * r.clone())).div_mod_floor(&n);
+        let (_, s) = (BigInt::modinv(&k, &n).unwrap() * (h + self.sign_sk.clone() * r.clone()))
+            .div_mod_floor(&n);
 
         (r, s)
     }
