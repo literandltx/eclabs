@@ -1055,4 +1055,92 @@ mod speed {
             100,
         );
     }
+
+    #[test]
+    fn test_encryption() {
+        let method_to_run = || -> u128 {
+            let message = String::from("Some string: ljsdklfjalskdjfl");
+            let curve: Curve = helpers::get_curve_p256();
+            let base_point: ProjectivePoint = curve.generate_random_projective_point_p256_fast();
+
+            let alice: Actor = Actor::new(helpers::get_curve_p256());
+            let bob: Actor = Actor::new(helpers::get_curve_p256());
+            let bob_public_key: ProjectivePoint = curve.scalar_mul(&bob.enc_sk, &base_point);
+
+            let start_time: Instant = Instant::now();
+            alice.encrypt(message.clone(), &bob_public_key, &base_point);
+            let end_time: Instant = Instant::now();
+
+            end_time.duration_since(start_time).as_nanos()
+        };
+
+        helpers::measure_average_execution_time("encryption", method_to_run, 100);
+    }
+
+    #[test]
+    fn test_decryption() {
+        let method_to_run = || -> u128 {
+            let message = String::from("Some string");
+            let curve: Curve = helpers::get_curve_p256();
+            let base_point: ProjectivePoint = curve.generate_random_projective_point_p256_fast();
+
+            let alice: Actor = Actor::new(helpers::get_curve_p256());
+            let bob: Actor = Actor::new(helpers::get_curve_p256());
+            let bob_public_key: ProjectivePoint = curve.scalar_mul(&bob.enc_sk, &base_point);
+            let ciphertext = alice.encrypt(message.clone(), &bob_public_key, &base_point);
+
+            let start_time: Instant = Instant::now();
+            bob.decrypt(ciphertext);
+            let end_time: Instant = Instant::now();
+
+            end_time.duration_since(start_time).as_nanos()
+        };
+
+        helpers::measure_average_execution_time("decryption", method_to_run, 100);
+    }
+
+    #[test]
+    fn test_signature() {
+        let method_to_run = || -> u128 {
+            let curve = helpers::get_curve_p256();
+            let message = String::from("Some string + kldsjfalksdhjfakjsdhfleushlixensml");
+            let alice = Actor::new(helpers::get_curve_p256());
+            let bob = Actor::new(helpers::get_curve_p256());
+            let base_point = curve.generate_random_projective_point_p256_fast();
+
+            let start_time: Instant = Instant::now();
+            alice.sign(message.clone(), &base_point);
+            let end_time: Instant = Instant::now();
+
+            end_time.duration_since(start_time).as_nanos()
+        };
+
+        helpers::measure_average_execution_time("signature", method_to_run, 100);
+    }
+
+    #[test]
+    fn test_signature_verification() {
+        let method_to_run = || -> u128 {
+            let curve = helpers::get_curve_p256();
+            let message = String::from("Some string + kldsjfalksdhjfakjsdhfleushlixensml");
+            let alice = Actor::new(helpers::get_curve_p256());
+            let bob = Actor::new(helpers::get_curve_p256());
+            let base_point = curve.generate_random_projective_point_p256_fast();
+
+            let sign = alice.sign(message.clone(), &base_point);
+
+            let start_time: Instant = Instant::now();
+            bob.verify(
+                &sign,
+                message.clone(),
+                &curve.scalar_mul(&alice.sign_sk, &base_point),
+                &base_point,
+            );
+            let end_time: Instant = Instant::now();
+
+            end_time.duration_since(start_time).as_nanos()
+        };
+
+        helpers::measure_average_execution_time("signature_verification", method_to_run, 100);
+    }
 }
