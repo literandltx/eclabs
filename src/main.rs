@@ -22,6 +22,7 @@ struct ProjectivePoint {
     z: BigInt,
 }
 
+#[derive(Clone, Debug)]
 struct Curve {
     p: BigInt,
     a: BigInt,
