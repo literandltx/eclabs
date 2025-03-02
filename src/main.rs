@@ -313,12 +313,13 @@ impl Actor {
     }
 
     fn compute_common_secret(&self, pre_key: &ProjectivePoint) -> BigInt {
-        let common_point = self.curve.scalar_mul(&self.sk, &pre_key).to_affine(&self.curve);
+        let common_point = self
+            .curve
+            .scalar_mul(&self.sk, &pre_key)
+            .to_affine(&self.curve);
 
         common_point.unwrap().x
     }
 }
 
-fn main() {
-
-}
+fn main() {}

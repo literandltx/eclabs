@@ -991,7 +991,11 @@ mod speed {
             end_time.duration_since(start_time).as_nanos()
         };
 
-        helpers::measure_average_execution_time("diffie_hellman_pre_key_computation", method_to_run, 100);
+        helpers::measure_average_execution_time(
+            "diffie_hellman_pre_key_computation",
+            method_to_run,
+            100,
+        );
     }
 
     #[test]
@@ -1008,6 +1012,10 @@ mod speed {
             end_time.duration_since(start_time).as_nanos()
         };
 
-        helpers::measure_average_execution_time("diffie_hellman_key_computation", method_to_run, 100);
+        helpers::measure_average_execution_time(
+            "diffie_hellman_key_computation",
+            method_to_run,
+            100,
+        );
     }
 }
