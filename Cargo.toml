@@ -8,3 +8,4 @@ num-bigint = { version = "0.4.6", features = ["rand"] }
 num-traits = "0.2.19"
 num = "0.4.3"
 rand = "0.8.0"
+rs_sha256 = "0.1.3"

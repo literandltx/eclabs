@@ -3,11 +3,14 @@ mod p256_test;
 mod prime_generator;
 
 use crate::helpers::{generate_random_bigint, module};
+use num::Integer;
 use num_bigint::BigInt;
+use num_bigint::RandBigInt;
 use num_traits::{Num, One, Pow, Zero};
 use rand::Rng;
-
-use num_bigint::RandBigInt;
+use rs_sha256;
+use std::hash::BuildHasher;
+use std::hash::{Hash, Hasher};
 
 #[derive(Clone, Debug)]
 struct AffinePoint {
@@ -357,6 +360,12 @@ impl Actor {
         Actor::decrypt_aes(key_str, encrypted_data)
     }
 
+    fn hash(message: String) -> u64 {
+        let mut sha256hasher = rs_sha256::Sha256State::default().build_hasher();
+        sha256hasher.write(message.as_bytes());
+        sha256hasher.finish()
+    }
+
     fn encrypt(
         &self,
         message: String,
@@ -385,6 +394,61 @@ impl Actor {
         let k = Actor::decapsulate(common_key.to_string(), encapsulated_key);
 
         Actor::decrypt_aes(k.to_string(), encrypted_m)
+    }
+
+    fn sign(&self, message: String, base_point: &ProjectivePoint) -> (BigInt, BigInt) {
+        let h = Actor::hash(message.to_string());
+        let n = self.curve.get_order();
+
+        // k, x are pre-initialised to avoid error, they will be changed anyway
+        let mut k: BigInt = BigInt::zero();
+        let mut x: BigInt = BigInt::zero();
+        let mut r: BigInt = BigInt::zero();
+        while r.eq(&BigInt::ZERO) {
+            k = self.generate_secret_key();
+            x = self
+                .curve
+                .scalar_mul(&k, base_point)
+                .to_affine(&self.curve)
+                .unwrap()
+                .x;
+            (_, r) = x.div_mod_floor(&n);
+        }
+
+        let (_, s) =
+            (BigInt::modinv(&k, &n).unwrap() * (h + self.sk.clone() * r.clone())).div_mod_floor(&n);
+
+        (r, s)
+    }
+
+    fn verify(
+        &self,
+        sign: &(BigInt, BigInt),
+        message: String,
+        signer_pk: &ProjectivePoint,
+        base_point: &ProjectivePoint,
+    ) -> bool {
+        let h: u64 = Actor::hash(message.to_string());
+        let n: BigInt = self.curve.get_order();
+        let (r, s): &(BigInt, BigInt) = sign;
+
+        let (_, u1): (BigInt, BigInt) =
+            (BigInt::modinv(&s, &n).unwrap() * h.clone()).div_mod_floor(&n);
+        let (_, u2): (BigInt, BigInt) =
+            (BigInt::modinv(&s, &n).unwrap() * r.clone()).div_mod_floor(&n);
+
+        let (_, v) = self
+            .curve
+            .add(
+                &self.curve.scalar_mul(&u1, base_point),
+                &self.curve.scalar_mul(&u2, signer_pk),
+            )
+            .to_affine(&self.curve)
+            .unwrap()
+            .x
+            .div_mod_floor(&n);
+
+        v.eq(r)
     }
 }
 

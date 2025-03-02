@@ -828,6 +828,25 @@ mod correctness {
 
         assert!(message.eq(&decrypted_message));
     }
+
+    #[test]
+
+    fn test_signature() {
+        let curve = helpers::get_curve_p256();
+        let message = String::from("Some string + kldsjfalksdhjfakjsdhfleushlixensml");
+        let alice = Actor::new(helpers::get_curve_p256());
+        let bob = Actor::new(helpers::get_curve_p256());
+        let base_point = curve.generate_random_projective_point_p256_fast();
+
+        let sign = alice.sign(message.clone(), &base_point);
+
+        assert!(bob.verify(
+            &sign,
+            message.clone(),
+            &alice.get_public_key(&base_point),
+            &base_point
+        ));
+    }
 }
 
 #[cfg(test)]
