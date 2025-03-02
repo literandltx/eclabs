@@ -304,21 +304,87 @@ impl Actor {
         Actor { curve, sk }
     }
 
-    // fn key_rotate(&mut self) {
-    //     let mut rng = rand::thread_rng();
-    //     self.sk = RandBigInt::gen_bigint_range(&mut rng, &BigInt::from(2u32), &self.curve.get_order());
-    // }
-    fn generate_pre_key(&self, base_point: &ProjectivePoint) -> ProjectivePoint {
+    fn generate_secret_key(&self) -> BigInt {
+        let mut rng = rand::thread_rng();
+        RandBigInt::gen_bigint_range(&mut rng, &BigInt::from(2u32), &self.curve.get_order())
+    }
+
+    fn get_public_key(&self, base_point: &ProjectivePoint) -> ProjectivePoint {
+        self.curve.scalar_mul(&self.sk, base_point)
+    }
+
+    fn update_secret_key(&mut self, base_point: &ProjectivePoint) -> ProjectivePoint {
+        self.sk = self.generate_secret_key();
         self.curve.scalar_mul(&self.sk, &base_point)
     }
 
-    fn compute_common_secret(&self, pre_key: &ProjectivePoint) -> BigInt {
-        let common_point = self
-            .curve
-            .scalar_mul(&self.sk, &pre_key)
-            .to_affine(&self.curve);
+    fn compute_common_secret(&self, key: &BigInt, pre_key: &ProjectivePoint) -> BigInt {
+        let common_point = self.curve.scalar_mul(key, &pre_key).to_affine(&self.curve);
 
         common_point.unwrap().x
+    }
+
+    fn encrypt_aes(key_str: String, plaintext: String) -> Vec<u8> {
+        let key_bytes = key_str.into_bytes();
+        let plaintext_bytes = plaintext.into_bytes();
+
+        let res: Vec<u8> = key_bytes
+            .iter()
+            .zip(plaintext_bytes.iter())
+            .map(|(&x1, &x2)| x1 ^ x2)
+            .collect();
+
+        res
+    }
+
+    fn decrypt_aes(key_str: String, encrypted_data: Vec<u8>) -> String {
+        let key_bytes = key_str.into_bytes();
+
+        let plaintext: Vec<u8> = key_bytes
+            .iter()
+            .zip(encrypted_data.iter())
+            .map(|(&x1, &x2)| x1 ^ x2)
+            .collect();
+
+        String::from_utf8(plaintext).expect("failed to convert vector of bytes to string")
+    }
+
+    fn encapsulate(key_str: String, plaintext: String) -> Vec<u8> {
+        Actor::encrypt_aes(key_str, plaintext)
+    }
+
+    fn decapsulate(key_str: String, encrypted_data: Vec<u8>) -> String {
+        Actor::decrypt_aes(key_str, encrypted_data)
+    }
+
+    fn encrypt(
+        &self,
+        message: String,
+        receiver_public_key: &ProjectivePoint,
+        base_point: &ProjectivePoint,
+    ) -> (ProjectivePoint, Vec<u8>, Vec<u8>) {
+        let k = self.generate_secret_key();
+        let encrypted_m = Actor::encrypt_aes(k.to_string(), message);
+
+        let ephemeral_key: BigInt = self.generate_secret_key();
+        let public_ephemeral_key = self.curve.scalar_mul(&ephemeral_key, &base_point);
+        let common_key = self.compute_common_secret(&ephemeral_key, &receiver_public_key);
+        let encapsulated_key = Actor::encapsulate(common_key.to_string(), k.to_string());
+        (public_ephemeral_key, encapsulated_key, encrypted_m)
+    }
+
+    fn decrypt(&self, ciphertext: (ProjectivePoint, Vec<u8>, Vec<u8>)) -> String {
+        let (public_ephemeral_key, encapsulated_key, encrypted_m): (
+            ProjectivePoint,
+            Vec<u8>,
+            Vec<u8>,
+        ) = ciphertext;
+
+        let common_key: BigInt = self.compute_common_secret(&self.sk, &public_ephemeral_key);
+
+        let k = Actor::decapsulate(common_key.to_string(), encapsulated_key);
+
+        Actor::decrypt_aes(k.to_string(), encrypted_m)
     }
 }
 

@@ -799,16 +799,34 @@ mod correctness {
         let curve: Curve = helpers::get_curve_p256();
         let base_point: ProjectivePoint = curve.generate_random_projective_point_p256_fast();
 
+        let mut alice: Actor = Actor::new(helpers::get_curve_p256());
+        let mut bob: Actor = Actor::new(helpers::get_curve_p256());
+
+        let alice_pre_key: ProjectivePoint = alice.update_secret_key(&base_point);
+        let bob_pre_key: ProjectivePoint = bob.update_secret_key(&base_point);
+
+        let alice_key: BigInt = alice.compute_common_secret(&alice.sk, &bob_pre_key);
+        let bob_key: BigInt = bob.compute_common_secret(&bob.sk, &alice_pre_key);
+
+        assert!(alice_key.eq(&bob_key));
+    }
+
+    #[test]
+    fn test_encryption_and_decryption() {
+        let message = String::from("Some string");
+
+        let curve: Curve = helpers::get_curve_p256();
+        let base_point: ProjectivePoint = curve.generate_random_projective_point_p256_fast();
+
         let alice: Actor = Actor::new(helpers::get_curve_p256());
         let bob: Actor = Actor::new(helpers::get_curve_p256());
 
-        let alice_pre_key: ProjectivePoint = alice.generate_pre_key(&base_point);
-        let bob_pre_key: ProjectivePoint = bob.generate_pre_key(&base_point);
+        let bob_public_key: ProjectivePoint = bob.get_public_key(&base_point);
+        let ciphertext = alice.encrypt(message.clone(), &bob_public_key, &base_point);
 
-        let alice_key: BigInt = alice.compute_common_secret(&bob_pre_key);
-        let bob_key: BigInt = bob.compute_common_secret(&alice_pre_key);
+        let decrypted_message = bob.decrypt(ciphertext);
 
-        assert!(alice_key.eq(&bob_key));
+        assert!(message.eq(&decrypted_message));
     }
 }
 
@@ -980,12 +998,12 @@ mod speed {
     #[test]
     fn test_diffie_hellman_pre_key_computation() {
         let method_to_run = || -> u128 {
-            let alice: Actor = Actor::new(helpers::get_curve_p256());
+            let mut alice: Actor = Actor::new(helpers::get_curve_p256());
             let curve: Curve = helpers::get_curve_p256();
             let base_point: ProjectivePoint = curve.generate_random_projective_point_p256_fast();
 
             let start_time: Instant = Instant::now();
-            alice.generate_pre_key(&base_point);
+            alice.update_secret_key(&base_point);
             let end_time: Instant = Instant::now();
 
             end_time.duration_since(start_time).as_nanos()
@@ -1006,7 +1024,7 @@ mod speed {
             let bob_pre_key: ProjectivePoint = curve.generate_random_projective_point_p256_fast();
 
             let start_time: Instant = Instant::now();
-            alice.compute_common_secret(&bob_pre_key);
+            alice.compute_common_secret(&alice.sk, &bob_pre_key);
             let end_time: Instant = Instant::now();
 
             end_time.duration_since(start_time).as_nanos()
