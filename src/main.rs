@@ -411,17 +411,16 @@ impl Actor {
 
         // k, x are pre-initialised to avoid error, they will be changed anyway
         let mut k: BigInt = BigInt::zero();
-        let mut x: BigInt = BigInt::zero();
         let mut r: BigInt = BigInt::zero();
         while r.eq(&BigInt::ZERO) {
             k = self.generate_secret_key();
-            x = self
+            (_, r) = self
                 .curve
                 .scalar_mul(&k, base_point)
                 .to_affine(&self.curve)
                 .unwrap()
-                .x;
-            (_, r) = x.div_mod_floor(&n);
+                .x
+                .div_mod_floor(&n);
         }
 
         let (_, s) = (BigInt::modinv(&k, &n).unwrap() * (h + self.sign_sk.clone() * r.clone()))
