@@ -7,6 +7,7 @@ use num::Integer;
 use num_bigint::BigInt;
 use num_bigint::RandBigInt;
 use num_traits::{Num, One, Pow, Zero};
+use rand::prelude::ThreadRng;
 use rand::Rng;
 use rs_sha256;
 use std::hash::BuildHasher;
@@ -296,29 +297,37 @@ impl Curve {
 
 struct Actor {
     curve: Curve,
-    sk: BigInt,
+    enc_sk: BigInt,
+    sign_sk: BigInt,
 }
 
 impl Actor {
     fn new(curve: Curve) -> Actor {
-        let mut rng = rand::thread_rng();
-        let sk: BigInt =
+        let mut rng: ThreadRng = rand::thread_rng();
+        let enc_sk: BigInt =
             RandBigInt::gen_bigint_range(&mut rng, &BigInt::from(2u32), &curve.get_order());
-        Actor { curve, sk }
+        let sign_sk: BigInt =
+            RandBigInt::gen_bigint_range(&mut rng, &BigInt::from(2u32), &curve.get_order());
+        Actor {
+            curve,
+            enc_sk,
+            sign_sk,
+        }
     }
 
     fn generate_secret_key(&self) -> BigInt {
-        let mut rng = rand::thread_rng();
+        let mut rng: ThreadRng = rand::thread_rng();
         RandBigInt::gen_bigint_range(&mut rng, &BigInt::from(2u32), &self.curve.get_order())
     }
 
-    fn get_public_key(&self, base_point: &ProjectivePoint) -> ProjectivePoint {
-        self.curve.scalar_mul(&self.sk, base_point)
+    fn update_secret_enc_key(&mut self, base_point: &ProjectivePoint) -> ProjectivePoint {
+        self.enc_sk = self.generate_secret_key();
+        self.curve.scalar_mul(&self.enc_sk, &base_point)
     }
 
-    fn update_secret_key(&mut self, base_point: &ProjectivePoint) -> ProjectivePoint {
-        self.sk = self.generate_secret_key();
-        self.curve.scalar_mul(&self.sk, &base_point)
+    fn update_secret_sign_key(&mut self, base_point: &ProjectivePoint) -> ProjectivePoint {
+        self.sign_sk = self.generate_secret_key();
+        self.curve.scalar_mul(&self.sign_sk, &base_point)
     }
 
     fn compute_common_secret(&self, key: &BigInt, pre_key: &ProjectivePoint) -> BigInt {
@@ -389,7 +398,7 @@ impl Actor {
             Vec<u8>,
         ) = ciphertext;
 
-        let common_key: BigInt = self.compute_common_secret(&self.sk, &public_ephemeral_key);
+        let common_key: BigInt = self.compute_common_secret(&self.enc_sk, &public_ephemeral_key);
 
         let k = Actor::decapsulate(common_key.to_string(), encapsulated_key);
 
@@ -416,7 +425,7 @@ impl Actor {
         }
 
         let (_, s) =
-            (BigInt::modinv(&k, &n).unwrap() * (h + self.sk.clone() * r.clone())).div_mod_floor(&n);
+            (BigInt::modinv(&k, &n).unwrap() * (h + self.sign_sk.clone() * r.clone())).div_mod_floor(&n);
 
         (r, s)
     }

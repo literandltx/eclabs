@@ -802,11 +802,11 @@ mod correctness {
         let mut alice: Actor = Actor::new(helpers::get_curve_p256());
         let mut bob: Actor = Actor::new(helpers::get_curve_p256());
 
-        let alice_pre_key: ProjectivePoint = alice.update_secret_key(&base_point);
-        let bob_pre_key: ProjectivePoint = bob.update_secret_key(&base_point);
+        let alice_pre_key: ProjectivePoint = alice.update_secret_enc_key(&base_point);
+        let bob_pre_key: ProjectivePoint = bob.update_secret_enc_key(&base_point);
 
-        let alice_key: BigInt = alice.compute_common_secret(&alice.sk, &bob_pre_key);
-        let bob_key: BigInt = bob.compute_common_secret(&bob.sk, &alice_pre_key);
+        let alice_key: BigInt = alice.compute_common_secret(&alice.enc_sk, &bob_pre_key);
+        let bob_key: BigInt = bob.compute_common_secret(&bob.enc_sk, &alice_pre_key);
 
         assert!(alice_key.eq(&bob_key));
     }
@@ -821,7 +821,7 @@ mod correctness {
         let alice: Actor = Actor::new(helpers::get_curve_p256());
         let bob: Actor = Actor::new(helpers::get_curve_p256());
 
-        let bob_public_key: ProjectivePoint = bob.get_public_key(&base_point);
+        let bob_public_key: ProjectivePoint = curve.scalar_mul(&bob.enc_sk, &base_point);
         let ciphertext = alice.encrypt(message.clone(), &bob_public_key, &base_point);
 
         let decrypted_message = bob.decrypt(ciphertext);
@@ -843,7 +843,7 @@ mod correctness {
         assert!(bob.verify(
             &sign,
             message.clone(),
-            &alice.get_public_key(&base_point),
+            &curve.scalar_mul(&alice.sign_sk, &base_point),
             &base_point
         ));
     }
@@ -1022,7 +1022,7 @@ mod speed {
             let base_point: ProjectivePoint = curve.generate_random_projective_point_p256_fast();
 
             let start_time: Instant = Instant::now();
-            alice.update_secret_key(&base_point);
+            alice.update_secret_enc_key(&base_point);
             let end_time: Instant = Instant::now();
 
             end_time.duration_since(start_time).as_nanos()
@@ -1043,7 +1043,7 @@ mod speed {
             let bob_pre_key: ProjectivePoint = curve.generate_random_projective_point_p256_fast();
 
             let start_time: Instant = Instant::now();
-            alice.compute_common_secret(&alice.sk, &bob_pre_key);
+            alice.compute_common_secret(&alice.enc_sk, &bob_pre_key);
             let end_time: Instant = Instant::now();
 
             end_time.duration_since(start_time).as_nanos()
